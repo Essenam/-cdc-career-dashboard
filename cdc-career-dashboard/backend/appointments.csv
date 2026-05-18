@@ -1,0 +1,10 @@
+Card Id,First Name,Last Name,Student Name,Email,Major,Start Date Time,Content,Checked In? (Yes / No),Minutes Advising Time,Staff Name
+STU001,Marcus,Johnson,Marcus Johnson,marcus.johnson@stthomas.edu,Business Administration,2026-03-10,CDC Mock Interview - Practiced behavioral questions,Yes,45,Sarah Mitchell
+STU001,Marcus,Johnson,Marcus Johnson,marcus.johnson@stthomas.edu,Business Administration,2026-04-15,Career Planning - Discussed offer from Target,Yes,30,Sarah Mitchell
+STU002,Priya,Patel,Priya Patel,priya.patel@stthomas.edu,Computer Science,2026-02-18,Resume Review - Updated technical skills section,Yes,30,David Park
+STU002,Priya,Patel,Priya Patel,priya.patel@stthomas.edu,Computer Science,2026-03-22,Career Planning - Interview prep for Microsoft,Yes,45,David Park
+STU003,Aisha,Williams,Aisha Williams,aisha.williams@stthomas.edu,Marketing,2026-03-20,Resume Review - Strengthened marketing experience,Yes,30,Sarah Mitchell
+STU004,Jordan,Chen,Jordan Chen,jordan.chen@stthomas.edu,Finance,2026-03-28,Career Planning - Prep for Wells Fargo interview,Yes,45,David Park
+STU007,Mei,Liu,Mei Liu,mei.liu@stthomas.edu,Data Science,2026-03-05,Career Planning - Reviewed Best Buy offer,Yes,45,Sarah Mitchell
+STU008,Caleb,Robinson,Caleb Robinson,caleb.robinson@stthomas.edu,Accounting,2026-04-12,Drop-in Advising - Resume basics overview,Yes,20,David Park
+STU010,Tyler,Anderson,Tyler Anderson,tyler.anderson@stthomas.edu,Political Science,2026-03-30,Career Planning - Discussed public sector pathways,Yes,45,Sarah Mitchell

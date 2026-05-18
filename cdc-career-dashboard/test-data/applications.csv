@@ -1,0 +1,13 @@
+Applicant (student) Card Id,Applicant (student) First Name,Applicant (student) Last Name,Applications Application Type,Applications Created At Date,Applications Fully Qualified? (Yes / No),Employer Name,Job External Apply? (Yes / No),Job Title,Applications Status
+STU001,Amara,Johnson,Job,2025-01-10,Yes,Target Corporation,No,Data Analyst Intern,Applied
+STU001,Amara,Johnson,Job,2025-01-18,Yes,3M Company,No,Business Intelligence Intern,Interviewing
+STU001,Amara,Johnson,Internship,2025-02-01,No,UnitedHealth Group,No,Analytics Intern,Applied
+STU002,Marcus,Rivera,Job,2025-01-05,Yes,Best Buy,No,Software Engineer Intern,Offer Received
+STU002,Marcus,Rivera,Job,2024-12-15,No,Amazon,No,SDE Intern,Rejected
+STU002,Marcus,Rivera,Internship,2025-01-20,Yes,Mayo Clinic,No,IT Intern,Applied
+STU003,Priya,Patel,Job,2025-02-10,Yes,Wells Fargo,No,Financial Analyst Intern,Applied
+STU004,Jordan,Smith,Internship,2025-01-28,Yes,General Mills,Yes,Marketing Intern,Interviewing
+STU005,Sofia,Chen,Job,2025-03-01,No,Hennepin Healthcare,No,Research Intern,Applied
+STU006,Kwame,Asante,Job,2025-02-15,Yes,Deloitte,No,Audit Intern,Applied
+STU006,Kwame,Asante,Job,2025-02-20,Yes,PricewaterhouseCoopers,No,Tax Intern,Applied
+STU007,Emily,Nguyen,Internship,2025-03-05,No,Children's Minnesota,No,Clinical Intern,Applied

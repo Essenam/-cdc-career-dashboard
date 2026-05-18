@@ -1,0 +1,18 @@
+Card Id,First Name,Last Name,Student Name,Email,Major,Start Date Date,Content,Checked In? (Yes / No),Staff Name
+STU001,Marcus,Johnson,Marcus Johnson,marcus.johnson@stthomas.edu,Business Administration,2026-02-20,Spring Career Fair,Yes,CDC Staff
+STU001,Marcus,Johnson,Marcus Johnson,marcus.johnson@stthomas.edu,Business Administration,2026-03-05,Industry Leaders Panel,Yes,CDC Staff
+STU001,Marcus,Johnson,Marcus Johnson,marcus.johnson@stthomas.edu,Business Administration,2026-03-25,Alumni Networking Night,Yes,CDC Staff
+STU001,Marcus,Johnson,Marcus Johnson,marcus.johnson@stthomas.edu,Business Administration,2026-04-08,Resume Workshop,Yes,CDC Staff
+STU002,Priya,Patel,Priya Patel,priya.patel@stthomas.edu,Computer Science,2026-02-20,Spring Career Fair,Yes,CDC Staff
+STU002,Priya,Patel,Priya Patel,priya.patel@stthomas.edu,Computer Science,2026-03-10,Tech Career Panel,Yes,CDC Staff
+STU002,Priya,Patel,Priya Patel,priya.patel@stthomas.edu,Computer Science,2026-04-02,Employer Info Session - Microsoft,Yes,CDC Staff
+STU003,Aisha,Williams,Aisha Williams,aisha.williams@stthomas.edu,Marketing,2026-02-20,Spring Career Fair,Yes,CDC Staff
+STU003,Aisha,Williams,Aisha Williams,aisha.williams@stthomas.edu,Marketing,2026-03-18,Marketing Career Panel,Yes,CDC Staff
+STU004,Jordan,Chen,Jordan Chen,jordan.chen@stthomas.edu,Finance,2026-03-12,Finance Networking Event,Yes,CDC Staff
+STU005,Sofia,Martinez,Sofia Martinez,sofia.martinez@stthomas.edu,Communication,2026-02-20,Spring Career Fair,Yes,CDC Staff
+STU007,Mei,Liu,Mei Liu,mei.liu@stthomas.edu,Data Science,2026-02-20,Spring Career Fair,Yes,CDC Staff
+STU007,Mei,Liu,Mei Liu,mei.liu@stthomas.edu,Data Science,2026-02-28,Data Science Symposium,Yes,CDC Staff
+STU007,Mei,Liu,Mei Liu,mei.liu@stthomas.edu,Data Science,2026-03-15,Employer Info Session - Best Buy,Yes,CDC Staff
+STU007,Mei,Liu,Mei Liu,mei.liu@stthomas.edu,Data Science,2026-04-01,LinkedIn Workshop,Yes,CDC Staff
+STU007,Mei,Liu,Mei Liu,mei.liu@stthomas.edu,Data Science,2026-04-10,Networking Dinner,Yes,CDC Staff
+STU009,Nadia,Okafor,Nadia Okafor,nadia.okafor@stthomas.edu,Biology,2026-02-20,Spring Career Fair,Yes,CDC Staff

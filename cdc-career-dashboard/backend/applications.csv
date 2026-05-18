@@ -1,0 +1,29 @@
+Applicant (student) Card Id,Applicant (student) First Name,Applicant (student) Last Name,Applications Application Type,Applications Created At Date,Applications Fully Qualified? (Yes / No),Employer Name,Job External Apply? (Yes / No),Job Title,Applications Status
+STU001,Marcus,Johnson,Job,2026-02-10,Yes,Target Corporation,No,Business Analyst Intern,accepted
+STU001,Marcus,Johnson,Job,2026-02-18,Yes,3M,No,Supply Chain Intern,pending
+STU001,Marcus,Johnson,Job,2026-03-01,Yes,Wells Fargo,No,Finance Intern,declined
+STU001,Marcus,Johnson,Job,2026-03-10,Yes,Mayo Clinic,No,Operations Intern,pending
+STU001,Marcus,Johnson,Job,2026-03-22,Yes,UnitedHealth Group,No,Project Manager Intern,interviewing
+STU002,Priya,Patel,Job,2026-01-15,Yes,Microsoft,No,Software Engineer Intern,interviewing
+STU002,Priya,Patel,Job,2026-01-28,Yes,Google,No,Software Engineer Intern,declined
+STU002,Priya,Patel,Job,2026-02-12,Yes,Meta,No,Product Manager Intern,pending
+STU002,Priya,Patel,Job,2026-02-25,Yes,Amazon,No,Data Engineer Intern,pending
+STU003,Aisha,Williams,Job,2026-03-05,Yes,Target Corporation,No,Marketing Intern,pending
+STU003,Aisha,Williams,Job,2026-03-18,No,General Mills,No,Brand Marketing Intern,declined
+STU004,Jordan,Chen,Job,2026-02-20,Yes,Wells Fargo,No,Financial Analyst Intern,interviewing
+STU004,Jordan,Chen,Job,2026-03-08,Yes,U.S. Bank,No,Banking Intern,pending
+STU004,Jordan,Chen,Job,2026-03-15,No,Ameriprise Financial,No,Finance Intern,declined
+STU005,Sofia,Martinez,Job,2026-04-01,Yes,Edelman,No,Public Relations Intern,pending
+STU006,Elijah,Thompson,Job,2026-03-25,Yes,Hennepin Healthcare,No,Research Intern,pending
+STU006,Elijah,Thompson,Job,2026-04-05,No,Children's Minnesota,No,Psychology Intern,declined
+STU007,Mei,Liu,Job,2026-01-20,Yes,Best Buy,No,Data Analyst Intern,accepted
+STU007,Mei,Liu,Job,2026-02-03,Yes,Optum,No,Analytics Intern,interviewing
+STU007,Mei,Liu,Job,2026-02-14,Yes,Target Corporation,No,Data Science Intern,pending
+STU007,Mei,Liu,Job,2026-02-28,Yes,Medtronic,No,Data Intern,pending
+STU007,Mei,Liu,Job,2026-03-10,Yes,General Mills,No,Analytics Intern,pending
+STU007,Mei,Liu,Job,2026-03-20,Yes,3M,No,Data Scientist Intern,pending
+STU010,Tyler,Anderson,Job,2026-02-05,Yes,City of Minneapolis,No,Policy Intern,pending
+STU010,Tyler,Anderson,Job,2026-02-22,Yes,State Farm,No,Government Relations Intern,pending
+STU010,Tyler,Anderson,No,2026-03-12,No,Dorsey & Whitney,No,Legal Research Intern,declined
+STU010,Tyler,Anderson,Job,2026-03-28,Yes,KPMG,No,Advisory Intern,pending
+STU011,Zoe,Kim,Job,2026-04-10,Yes,Cargill,No,Engineering Intern,pending
