@@ -57,8 +57,8 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
 
   const getRiskColor = (level) => {
     const l = level?.toLowerCase();
-    if (l === 'high') return 'bg-red-100 text-red-800';
-    if (l === 'medium') return 'bg-yellow-100 text-yellow-800';
+    if (l === 'need outreach' || l === 'high') return 'bg-red-100 text-red-800';
+    if (l === 'developing' || l === 'medium') return 'bg-yellow-100 text-yellow-800';
     return 'bg-green-100 text-green-800';
   };
 
@@ -90,32 +90,41 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
 
       {/* Summary Stats */}
       {summary && (
-        <div className="grid grid-cols-5 gap-4 mb-4">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600">Total Students</p>
-            <p className="text-2xl font-bold">{summary.totalStudents}</p>
+        <>
+          <div className="grid grid-cols-4 gap-4 mb-2">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 font-medium">Total Students</p>
+              <p className="text-3xl font-bold text-blue-800">{summary.totalStudents}</p>
+            </div>
+            <div className="bg-red-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 font-medium">Need Outreach</p>
+              <p className="text-3xl font-bold text-red-700">{summary.highRiskCount}</p>
+              <p className="text-xs text-red-400 mt-1">Low or no platform activity</p>
+            </div>
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 font-medium">Developing</p>
+              <p className="text-3xl font-bold text-yellow-700">{summary.mediumRiskCount}</p>
+              <p className="text-xs text-yellow-500 mt-1">Some activity, needs encouragement</p>
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 font-medium">On Track</p>
+              <p className="text-3xl font-bold text-green-700">{summary.lowRiskCount}</p>
+              <p className="text-xs text-green-500 mt-1">Actively engaged across platforms</p>
+            </div>
           </div>
-          <div className="bg-red-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600">High Risk</p>
-            <p className="text-2xl font-bold text-red-700">{summary.highRiskCount}</p>
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-xs text-gray-400">
+              Engagement is scored from platform activity: events (×20) + applications (×15) + CDC appointments (×10).
+              Need Outreach = score &lt; 50 · Developing = 50–99 · On Track = 100+
+            </p>
+            <button
+              onClick={handleToggleAnalytics}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white text-sm font-semibold rounded-lg transition"
+            >
+              <span>📊</span> {showAnalytics ? 'Hide Analytics' : 'Analytics & Insights'}
+            </button>
           </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600">Medium Risk</p>
-            <p className="text-2xl font-bold text-yellow-700">{summary.mediumRiskCount}</p>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600">Low Risk</p>
-            <p className="text-2xl font-bold text-green-700">{summary.lowRiskCount}</p>
-          </div>
-          <button
-            onClick={handleToggleAnalytics}
-            className="bg-purple-50 hover:bg-purple-100 p-4 rounded-lg text-left transition border-2 border-transparent hover:border-purple-300"
-          >
-            <p className="text-sm text-gray-600">Avg Engagement</p>
-            <p className="text-2xl font-bold text-purple-700">{summary.avgEngagement}</p>
-            <p className="text-xs text-purple-500 mt-1">{showAnalytics ? 'Hide analytics ▲' : 'View analytics ▼'}</p>
-          </button>
-        </div>
+        </>
       )}
 
       {/* Analytics Panel */}
@@ -248,22 +257,22 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
             All
           </button>
           <button
-            onClick={() => handleFilterRisk('high')}
-            className={`px-4 py-2 rounded ${filterRisk === 'high' ? 'bg-red-500 text-white' : 'bg-gray-200'}`}
+            onClick={() => handleFilterRisk('need outreach')}
+            className={`px-4 py-2 rounded ${filterRisk === 'need outreach' ? 'bg-red-500 text-white' : 'bg-gray-200'}`}
           >
-            High Risk
+            Need Outreach
           </button>
           <button
-            onClick={() => handleFilterRisk('medium')}
-            className={`px-4 py-2 rounded ${filterRisk === 'medium' ? 'bg-yellow-500 text-white' : 'bg-gray-200'}`}
+            onClick={() => handleFilterRisk('developing')}
+            className={`px-4 py-2 rounded ${filterRisk === 'developing' ? 'bg-yellow-500 text-white' : 'bg-gray-200'}`}
           >
-            Medium Risk
+            Developing
           </button>
           <button
-            onClick={() => handleFilterRisk('low')}
-            className={`px-4 py-2 rounded ${filterRisk === 'low' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
+            onClick={() => handleFilterRisk('on track')}
+            className={`px-4 py-2 rounded ${filterRisk === 'on track' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
           >
-            Low Risk
+            On Track
           </button>
         </div>
 

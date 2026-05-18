@@ -543,9 +543,9 @@ async function updateEngagementScore(studentId) {
 
     const engagementScore = (eventCount * 20) + (appCount * 15) + (appointmentCount * 10);
 
-    let riskLevel = 'low';
-    if (engagementScore < 50) riskLevel = 'high';
-    else if (engagementScore < 100) riskLevel = 'medium';
+    let riskLevel = 'on track';
+    if (engagementScore < 50)  riskLevel = 'need outreach';
+    else if (engagementScore < 100) riskLevel = 'developing';
 
     await supabaseAdmin
       .from('student_career_progress')

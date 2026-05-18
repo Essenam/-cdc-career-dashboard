@@ -165,11 +165,11 @@ router.get('/analytics', async (req, res) => {
     const studentsWithCompletions = Object.keys(completionCountByStudent).length;
 
     const engagementDistribution = [
-      { label: 'No activity',    range: '0',       count: students.filter(s => s.engagement_score === 0).length },
-      { label: 'Minimal',        range: '1–50',     count: students.filter(s => s.engagement_score > 0   && s.engagement_score <= 50).length },
-      { label: 'Developing',     range: '51–100',   count: students.filter(s => s.engagement_score > 50  && s.engagement_score <= 100).length },
-      { label: 'Active',         range: '101–200',  count: students.filter(s => s.engagement_score > 100 && s.engagement_score <= 200).length },
-      { label: 'Highly Active',  range: '200+',     count: students.filter(s => s.engagement_score > 200).length },
+      { label: 'No activity',  range: '0',      count: students.filter(s => (s.engagement_score || 0) === 0).length },
+      { label: 'Need Outreach',range: '1-49',   count: students.filter(s => (s.engagement_score || 0) > 0   && (s.engagement_score || 0) < 50).length },
+      { label: 'Developing',   range: '50-99',  count: students.filter(s => (s.engagement_score || 0) >= 50 && (s.engagement_score || 0) < 100).length },
+      { label: 'On Track',     range: '100-199',count: students.filter(s => (s.engagement_score || 0) >= 100 && (s.engagement_score || 0) < 200).length },
+      { label: 'Highly Active',range: '200+',   count: students.filter(s => (s.engagement_score || 0) >= 200).length },
     ];
 
     const platformUsage = [
