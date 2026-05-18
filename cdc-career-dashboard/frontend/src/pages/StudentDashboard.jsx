@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getStudentProfile, getStudentEvents, getStudentApplications, getStudentInterviews, searchStudents, getTaskCompletions, saveTaskCompletion, deleteTaskCompletion } from '../services/api';
 
-function StudentDashboard({ setView, initialStudentId, fromStaff }) {
+function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
   const [student, setStudent] = useState(null);
   const [events, setEvents] = useState([]);
   const [applications, setApplications] = useState([]);
@@ -550,14 +550,14 @@ function StudentDashboard({ setView, initialStudentId, fromStaff }) {
                 >
                   Back to Staff Dashboard
                 </button>
-              ) : (
+              ) : !locked ? (
                 <button
                   onClick={() => { setStudent(null); setStudentId(null); setSearchQuery(''); setSearchResults([]); }}
                   className="text-xs text-purple-500 hover:text-purple-800 underline"
                 >
                   Switch Student
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

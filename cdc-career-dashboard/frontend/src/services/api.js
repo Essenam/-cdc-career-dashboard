@@ -52,6 +52,10 @@ export const uploadCSV = (files) => {
   });
 };
 
+// Auth endpoints
+export const loginStaff = (password) =>
+  api.post('/api/auth/staff', { password });
+
 // Task completion endpoints
 export const getTaskCompletions = (studentId) =>
   api.get(`/api/tasks/${studentId}`);
