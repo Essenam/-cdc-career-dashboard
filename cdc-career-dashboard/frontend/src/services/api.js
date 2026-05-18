@@ -32,8 +32,11 @@ export const getStudentsByRisk = (level) =>
 export const getStudentDetail = (studentId) => 
   api.get(`/api/staff/students/${studentId}`);
 
-export const getDashboardSummary = () => 
+export const getDashboardSummary = () =>
   api.get('/api/staff/dashboard');
+
+export const getStaffAnalytics = () =>
+  api.get('/api/staff/analytics');
 
 // Admin endpoints
 export const resyncStudents = () =>
