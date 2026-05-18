@@ -16,6 +16,7 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
   const [manualCompletions, setManualCompletions] = useState({});
   const [proofFiles, setProofFiles] = useState({});
   const [uploadError, setUploadError] = useState('');
+  const [detailModal, setDetailModal] = useState(null); // 'events' | 'applications' | 'interviews'
   const searchTimeout = useRef(null);
 
   const fetchData = async (id) => {
@@ -704,20 +705,32 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
             <div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Your Stats</h3>
               <div className="space-y-3">
-                <div className="bg-white border-2 border-purple-200 rounded-lg p-4">
+                <button
+                  onClick={() => events.length > 0 && setDetailModal('events')}
+                  className={`w-full bg-white border-2 border-purple-200 rounded-lg p-4 text-left transition ${events.length > 0 ? 'hover:border-purple-500 hover:shadow-md cursor-pointer' : 'cursor-default'}`}
+                >
                   <p className="text-sm text-gray-600 font-medium">Events Attended</p>
                   <p className="text-3xl font-bold text-purple-800 mt-2">{student.career_events_attended || 0}</p>
-                </div>
-                <div className="bg-white border-2 border-purple-200 rounded-lg p-4">
+                  {events.length > 0 && <p className="text-xs text-purple-500 mt-1">View details →</p>}
+                </button>
+
+                <button
+                  onClick={() => applications.length > 0 && setDetailModal('applications')}
+                  className={`w-full bg-white border-2 border-purple-200 rounded-lg p-4 text-left transition ${applications.length > 0 ? 'hover:border-purple-500 hover:shadow-md cursor-pointer' : 'cursor-default'}`}
+                >
                   <p className="text-sm text-gray-600 font-medium">Applications</p>
                   <p className="text-3xl font-bold text-purple-800 mt-2">{student.job_applications_count || 0}</p>
-                </div>
-                {interviews.length > 0 && (
-                  <div className="bg-white border-2 border-purple-200 rounded-lg p-4">
-                    <p className="text-sm text-gray-600 font-medium">Interviews</p>
-                    <p className="text-3xl font-bold text-purple-800 mt-2">{interviews.length}</p>
-                  </div>
-                )}
+                  {applications.length > 0 && <p className="text-xs text-purple-500 mt-1">View details →</p>}
+                </button>
+
+                <button
+                  onClick={() => interviews.length > 0 && setDetailModal('interviews')}
+                  className={`w-full bg-white border-2 border-purple-200 rounded-lg p-4 text-left transition ${interviews.length > 0 ? 'hover:border-purple-500 hover:shadow-md cursor-pointer' : 'cursor-default'}`}
+                >
+                  <p className="text-sm text-gray-600 font-medium">CDC Appointments</p>
+                  <p className="text-3xl font-bold text-purple-800 mt-2">{interviews.length}</p>
+                  {interviews.length > 0 && <p className="text-xs text-purple-500 mt-1">View details →</p>}
+                </button>
               </div>
             </div>
 
@@ -743,6 +756,104 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
           </div>
         </div>
       </div>
+
+      {detailModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col">
+
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-purple-200 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+              <h2 className="text-xl font-bold text-gray-900">
+                {detailModal === 'events' && `Career Events (${events.length})`}
+                {detailModal === 'applications' && `Applications (${applications.length})`}
+                {detailModal === 'interviews' && `CDC Appointments (${interviews.length})`}
+              </h2>
+              <button onClick={() => setDetailModal(null)} className="text-gray-400 hover:text-gray-700 text-2xl font-bold leading-none">✕</button>
+            </div>
+
+            {/* Body */}
+            <div className="overflow-y-auto p-6 space-y-3">
+
+              {/* Events */}
+              {detailModal === 'events' && events.map((e) => (
+                <div key={e.event_id} className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-semibold text-gray-900">{e.event_title || 'Career Event'}</p>
+                      {e.staff_name && <p className="text-xs text-gray-500 mt-0.5">with {e.staff_name}</p>}
+                      {e.notes && <p className="text-xs text-gray-500 mt-1 italic">{e.notes}</p>}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm text-gray-600">{e.attended_date ? new Date(e.attended_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</p>
+                      {e.is_drop_in && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded mt-1 inline-block">Drop-in</span>}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Applications */}
+              {detailModal === 'applications' && applications.map((a) => {
+                const statusColors = {
+                  interviewing: 'bg-blue-100 text-blue-700',
+                  pending: 'bg-yellow-100 text-yellow-700',
+                  declined: 'bg-red-100 text-red-700',
+                  accepted: 'bg-green-100 text-green-700',
+                  offer: 'bg-green-100 text-green-700',
+                };
+                const color = statusColors[a.status?.toLowerCase()] || 'bg-gray-100 text-gray-600';
+                return (
+                  <div key={a.app_id} className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-semibold text-gray-900">{a.company_name || 'Unknown Company'}</p>
+                        <p className="text-sm text-gray-600 mt-0.5">{a.job_title || '—'}</p>
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded capitalize ${color}`}>{a.status || 'unknown'}</span>
+                          {a.fully_qualified && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Fully Qualified</span>}
+                          {a.external_apply && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">External</span>}
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-500 shrink-0">{a.applied_date ? new Date(a.applied_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</p>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Interviews / CDC Appointments */}
+              {detailModal === 'interviews' && interviews.map((i) => {
+                const statusColors = {
+                  completed: 'bg-green-100 text-green-700',
+                  scheduled: 'bg-blue-100 text-blue-700',
+                  cancelled: 'bg-red-100 text-red-700',
+                };
+                const color = statusColors[i.status?.toLowerCase()] || 'bg-gray-100 text-gray-600';
+                return (
+                  <div key={i.appt_id} className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-semibold text-gray-900">{i.company_name || 'Appointment'}</p>
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded capitalize ${color}`}>{i.status || 'unknown'}</span>
+                          {i.duration_minutes && <span className="text-xs text-gray-500">{i.duration_minutes} min</span>}
+                        </div>
+                        {i.notes && <p className="text-xs text-gray-500 mt-1">{i.notes}</p>}
+                      </div>
+                      <p className="text-sm text-gray-500 shrink-0">{i.scheduled_date ? new Date(i.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</p>
+                    </div>
+                  </div>
+                );
+              })}
+
+            </div>
+
+            <div className="border-t border-purple-100 px-6 py-4 flex justify-end rounded-b-2xl">
+              <button onClick={() => setDetailModal(null)} className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition text-sm">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showRecommendations && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
