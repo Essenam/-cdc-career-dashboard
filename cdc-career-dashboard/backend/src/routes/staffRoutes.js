@@ -104,9 +104,9 @@ router.get('/dashboard', async (req, res) => {
       .select('student_id, risk_level, engagement_score');
 
     const totalStudents = allStudents?.length || 0;
-    const highRiskCount = allStudents?.filter(s => s.risk_level?.toLowerCase() === 'high').length || 0;
-    const mediumRiskCount = allStudents?.filter(s => s.risk_level?.toLowerCase() === 'medium').length || 0;
-    const lowRiskCount = allStudents?.filter(s => s.risk_level?.toLowerCase() === 'low').length || 0;
+    const highRiskCount = allStudents?.filter(s => ['need outreach','high'].includes(s.risk_level?.toLowerCase())).length || 0;
+    const mediumRiskCount = allStudents?.filter(s => ['developing','medium'].includes(s.risk_level?.toLowerCase())).length || 0;
+    const lowRiskCount = allStudents?.filter(s => ['on track','low'].includes(s.risk_level?.toLowerCase())).length || 0;
     const avgEngagement = allStudents?.length > 0 
       ? Math.round(allStudents.reduce((sum, s) => sum + s.engagement_score, 0) / allStudents.length)
       : 0;
