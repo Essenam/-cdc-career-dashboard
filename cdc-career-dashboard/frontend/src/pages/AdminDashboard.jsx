@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { uploadCSV, resyncStudents, resetAllData } from '../services/api';
+import { uploadCSV, resyncStudents, resetAllData, getAdminRoadmap, createRoadmapTask, updateRoadmapTask, deleteRoadmapTask } from '../services/api';
 import api from '../services/api';
 
 function AdminDashboard({ onUploadComplete }) {
@@ -15,6 +15,19 @@ function AdminDashboard({ onUploadComplete }) {
   const [resetting, setResetting] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetResult, setResetResult] = useState(null);
+
+  const [milestones, setMilestones] = useState([]);
+  const [milestonesOpen, setMilestonesOpen] = useState(false);
+  const [milestonesLoading, setMilestonesLoading] = useState(false);
+  const [activeYear, setActiveYear] = useState(1);
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [editSection, setEditSection] = useState('');
+  const [addingToSection, setAddingToSection] = useState(null);
+  const [addText, setAddText] = useState('');
+  const [newSectionName, setNewSectionName] = useState('');
+  const [addingNewSection, setAddingNewSection] = useState(false);
+  const [milestoneError, setMilestoneError] = useState('');
 
   const handleFileChange = (e) => {
     setFiles(Array.from(e.target.files));
@@ -61,6 +74,68 @@ function AdminDashboard({ onUploadComplete }) {
       setPreviewing(false);
     }
   };
+
+  const loadMilestones = async () => {
+    setMilestonesLoading(true);
+    setMilestoneError('');
+    try {
+      const res = await getAdminRoadmap();
+      setMilestones(res.data || []);
+    } catch { setMilestoneError('Failed to load milestones.'); }
+    finally { setMilestonesLoading(false); }
+  };
+
+  const handleToggleMilestones = () => {
+    if (!milestonesOpen && milestones.length === 0) loadMilestones();
+    setMilestonesOpen(o => !o);
+  };
+
+  const startEdit = (task) => {
+    setEditingId(task.id);
+    setEditText(task.task_text);
+    setEditSection(task.section);
+  };
+
+  const saveEdit = async (id) => {
+    try {
+      const res = await updateRoadmapTask(id, { task_text: editText, section: editSection });
+      setMilestones(ms => ms.map(m => m.id === id ? res.data : m));
+      setEditingId(null);
+    } catch { setMilestoneError('Failed to save changes.'); }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteRoadmapTask(id);
+      setMilestones(ms => ms.filter(m => m.id !== id));
+    } catch { setMilestoneError('Failed to delete task.'); }
+  };
+
+  const handleAddTask = async (section) => {
+    if (!addText.trim()) return;
+    try {
+      const maxOrder = milestones.filter(m => m.year === activeYear && m.section === section).length;
+      const res = await createRoadmapTask({ year: activeYear, section, task_text: addText.trim(), order_index: maxOrder });
+      setMilestones(ms => [...ms, res.data]);
+      setAddText('');
+      setAddingToSection(null);
+    } catch { setMilestoneError('Failed to add task.'); }
+  };
+
+  const handleAddNewSection = async () => {
+    if (!newSectionName.trim() || !addText.trim()) return;
+    try {
+      const res = await createRoadmapTask({ year: activeYear, section: newSectionName.trim(), task_text: addText.trim(), order_index: 0 });
+      setMilestones(ms => [...ms, res.data]);
+      setAddText('');
+      setNewSectionName('');
+      setAddingNewSection(false);
+    } catch { setMilestoneError('Failed to add task.'); }
+  };
+
+  const yearTasks = milestones.filter(m => m.year === activeYear);
+  const yearSections = [...new Set(yearTasks.map(m => m.section))];
+  const yearLabels = { 1: 'Explore', 2: 'Research', 3: 'Develop', 4: 'Implement' };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
@@ -278,6 +353,146 @@ function AdminDashboard({ onUploadComplete }) {
           )}
           {resetResult === 'error' && (
             <p className="mt-3 text-sm font-medium text-red-600">Reset failed. Check the server logs.</p>
+          )}
+        </div>
+
+        {/* Manage Milestones */}
+        <div className="bg-white rounded-lg shadow-lg border-2 border-purple-200 mb-8">
+          <button
+            onClick={handleToggleMilestones}
+            className="w-full flex items-center justify-between px-8 py-5 text-left"
+          >
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Manage Milestones</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Add, edit, or remove tasks from the student roadmap</p>
+            </div>
+            <span className={`text-gray-400 text-xl transition-transform ${milestonesOpen ? 'rotate-180' : ''}`}>▼</span>
+          </button>
+
+          {milestonesOpen && (
+            <div className="border-t border-purple-100 px-8 pb-8 pt-6">
+              {milestoneError && (
+                <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2 flex justify-between">
+                  <span>{milestoneError}</span>
+                  <button onClick={() => setMilestoneError('')} className="font-bold ml-4">✕</button>
+                </div>
+              )}
+
+              {/* Year tabs */}
+              <div className="flex gap-2 mb-6">
+                {[1, 2, 3, 4].map(y => (
+                  <button
+                    key={y}
+                    onClick={() => setActiveYear(y)}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${activeYear === y ? 'bg-purple-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                  >
+                    Year {y}: {yearLabels[y]}
+                  </button>
+                ))}
+              </div>
+
+              {milestonesLoading ? (
+                <p className="text-sm text-gray-400 text-center py-8">Loading...</p>
+              ) : (
+                <div className="space-y-6">
+                  {yearSections.map(section => (
+                    <div key={section}>
+                      <p className="text-xs font-bold text-purple-700 uppercase tracking-wider mb-2">{section}</p>
+                      <div className="space-y-2">
+                        {yearTasks.filter(t => t.section === section).map(task => (
+                          <div key={task.id} className="bg-purple-50 border border-purple-200 rounded-lg">
+                            {editingId === task.id ? (
+                              <div className="p-3 space-y-2">
+                                <input
+                                  value={editSection}
+                                  onChange={e => setEditSection(e.target.value)}
+                                  className="w-full border border-purple-300 rounded px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-purple-600"
+                                  placeholder="Section name"
+                                />
+                                <textarea
+                                  value={editText}
+                                  onChange={e => setEditText(e.target.value)}
+                                  rows={2}
+                                  className="w-full border border-purple-300 rounded px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-purple-600 resize-none"
+                                />
+                                <div className="flex gap-2">
+                                  <button onClick={() => saveEdit(task.id)} className="px-3 py-1 bg-purple-700 text-white text-xs font-semibold rounded hover:bg-purple-800 transition">Save</button>
+                                  <button onClick={() => setEditingId(null)} className="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-semibold rounded hover:bg-gray-300 transition">Cancel</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-start gap-3 px-4 py-3">
+                                <p className="text-sm text-gray-800 flex-1 leading-snug">{task.task_text}</p>
+                                <div className="flex gap-1 shrink-0">
+                                  <button onClick={() => startEdit(task)} className="text-xs text-purple-600 hover:text-purple-900 font-medium px-2 py-1 rounded hover:bg-purple-100 transition">Edit</button>
+                                  <button onClick={() => handleDelete(task.id)} className="text-xs text-red-400 hover:text-red-700 font-medium px-2 py-1 rounded hover:bg-red-50 transition">Delete</button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {/* Add task to existing section */}
+                        {addingToSection === section ? (
+                          <div className="border border-dashed border-purple-300 rounded-lg p-3 space-y-2">
+                            <textarea
+                              value={addText}
+                              onChange={e => setAddText(e.target.value)}
+                              rows={2}
+                              placeholder="New task description..."
+                              className="w-full border border-purple-300 rounded px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-purple-600 resize-none"
+                              autoFocus
+                            />
+                            <div className="flex gap-2">
+                              <button onClick={() => handleAddTask(section)} className="px-3 py-1 bg-purple-700 text-white text-xs font-semibold rounded hover:bg-purple-800 transition">Add</button>
+                              <button onClick={() => { setAddingToSection(null); setAddText(''); }} className="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-semibold rounded hover:bg-gray-300 transition">Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => { setAddingToSection(section); setAddText(''); setAddingNewSection(false); }}
+                            className="w-full text-left text-xs text-purple-500 hover:text-purple-800 font-medium py-1 px-1"
+                          >
+                            + Add task to this section
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Add new section */}
+                  {addingNewSection ? (
+                    <div className="border-2 border-dashed border-purple-300 rounded-lg p-4 space-y-2">
+                      <input
+                        value={newSectionName}
+                        onChange={e => setNewSectionName(e.target.value)}
+                        placeholder="New section name..."
+                        className="w-full border border-purple-300 rounded px-3 py-2 text-sm font-semibold text-gray-800 focus:outline-none focus:border-purple-600"
+                        autoFocus
+                      />
+                      <textarea
+                        value={addText}
+                        onChange={e => setAddText(e.target.value)}
+                        rows={2}
+                        placeholder="First task in this section..."
+                        className="w-full border border-purple-300 rounded px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-purple-600 resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <button onClick={handleAddNewSection} className="px-3 py-1 bg-purple-700 text-white text-xs font-semibold rounded hover:bg-purple-800 transition">Create Section</button>
+                        <button onClick={() => { setAddingNewSection(false); setAddText(''); setNewSectionName(''); }} className="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-semibold rounded hover:bg-gray-300 transition">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setAddingNewSection(true); setAddingToSection(null); setAddText(''); }}
+                      className="w-full border-2 border-dashed border-purple-200 rounded-lg py-3 text-sm text-purple-500 hover:text-purple-800 hover:border-purple-400 font-medium transition"
+                    >
+                      + Add new section to Year {activeYear}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
 

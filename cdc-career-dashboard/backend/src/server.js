@@ -8,6 +8,7 @@ const staffRoutes = require('./routes/staffRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const authRoutes = require('./routes/authRoutes');
+const roadmapRoutes = require('./routes/roadmapRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api/staff', staffRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/roadmap', roadmapRoutes);
 
 // Error handling
 app.use(errorHandler);

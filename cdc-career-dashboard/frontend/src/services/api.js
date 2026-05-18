@@ -52,6 +52,13 @@ export const uploadCSV = (files) => {
   });
 };
 
+// Roadmap endpoints
+export const getRoadmap = () => api.get('/api/roadmap');
+export const getAdminRoadmap = () => api.get('/api/roadmap/admin');
+export const createRoadmapTask = (data) => api.post('/api/roadmap', data);
+export const updateRoadmapTask = (id, data) => api.put(`/api/roadmap/${id}`, data);
+export const deleteRoadmapTask = (id) => api.delete(`/api/roadmap/${id}`);
+
 // Auth endpoints
 export const loginStaff = (password) =>
   api.post('/api/auth/staff', { password });

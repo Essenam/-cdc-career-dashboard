@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getStudentProfile, getStudentEvents, getStudentApplications, getStudentInterviews, searchStudents, getTaskCompletions, saveTaskCompletion, deleteTaskCompletion } from '../services/api';
+import { getStudentProfile, getStudentEvents, getStudentApplications, getStudentInterviews, searchStudents, getTaskCompletions, saveTaskCompletion, deleteTaskCompletion, getRoadmap } from '../services/api';
 
 function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
   const [student, setStudent] = useState(null);
@@ -17,6 +17,8 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
   const [proofFiles, setProofFiles] = useState({});
   const [uploadError, setUploadError] = useState('');
   const [detailModal, setDetailModal] = useState(null); // 'events' | 'applications' | 'interviews'
+  const [roadmapTasks, setRoadmapTasks] = useState({});
+  const [tasksLoading, setTasksLoading] = useState(true);
   const searchTimeout = useRef(null);
 
   const fetchData = async (id) => {
@@ -75,6 +77,19 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
   }, [initialStudentId]);
 
   useEffect(() => {
+    getRoadmap()
+      .then(res => {
+        const byYear = { 1: [], 2: [], 3: [], 4: [] };
+        for (const t of res.data) {
+          if (byYear[t.year]) byYear[t.year].push(t);
+        }
+        setRoadmapTasks(byYear);
+      })
+      .catch(() => {})
+      .finally(() => setTasksLoading(false));
+  }, []);
+
+  useEffect(() => {
     if (!student?.student_id) return;
     setManualCompletions({});
     setProofFiles({});
@@ -122,7 +137,7 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
     const currentYear = student.current_year || student.class_year || 3;
     if (year > currentYear) return { pct: 0, completed: 0 };
     const tasks = getRoadmapTasks(year);
-    const completed = tasks.filter(t => isTaskCompleted(year, t.task, t.completed)).length;
+    const completed = tasks.filter(t => isTaskCompleted(t.id)).length;
     const pct = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
     return { pct, completed, total: tasks.length };
   };
@@ -142,43 +157,34 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
     return sections;
   };
 
-  const taskKey = (year, taskText) =>
-    `${year}__${taskText.replace(/\W+/g, '_').slice(0, 60)}`;
+  const taskKey = (taskId) => `task_${taskId}`;
 
-  const isTaskCompleted = (year, taskText, autoCompleted) => {
-    const key = taskKey(year, taskText);
-    return key in manualCompletions ? manualCompletions[key] : autoCompleted;
-  };
+  const isTaskCompleted = (taskId) => !!manualCompletions[taskKey(taskId)];
 
-  const toggleTaskCompletion = (year, taskText, autoCompleted) => {
-    const key = taskKey(year, taskText);
-    const current = isTaskCompleted(year, taskText, autoCompleted);
-    const nowChecked = !current;
+  const toggleTaskCompletion = (task) => {
+    const key = taskKey(task.id);
+    const nowChecked = !isTaskCompleted(task.id);
 
-    // Update UI immediately
     const updatedTasks = { ...manualCompletions, [key]: nowChecked };
     setManualCompletions(updatedTasks);
     try { localStorage.setItem(`cdc_tasks_${student?.student_id}`, JSON.stringify(updatedTasks)); } catch {}
 
-    // Remove proof when unchecking
-    if (current && proofFiles[key]) {
+    if (!nowChecked && proofFiles[key]) {
       const updatedProofs = { ...proofFiles };
       delete updatedProofs[key];
       setProofFiles(updatedProofs);
       try { localStorage.setItem(`cdc_proofs_${student?.student_id}`, JSON.stringify(updatedProofs)); } catch {}
     }
 
-    // Persist to Supabase
     if (nowChecked) {
       saveTaskCompletion(student.student_id, key, { completed: true }).catch(() => {});
     } else {
       deleteTaskCompletion(student.student_id, key).catch(() => {});
     }
-
     setUploadError('');
   };
 
-  const handleProofUpload = (year, taskText, e) => {
+  const handleProofUpload = (taskId, e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadError('');
@@ -187,7 +193,7 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
       e.target.value = '';
       return;
     }
-    const key = taskKey(year, taskText);
+    const key = taskKey(taskId);
     const reader = new FileReader();
     reader.onload = (ev) => {
       const proof = { name: file.name, type: file.type, size: file.size, dataUrl: ev.target.result };
@@ -195,7 +201,6 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
       setProofFiles(updatedProofs);
       try { localStorage.setItem(`cdc_proofs_${student?.student_id}`, JSON.stringify(updatedProofs)); } catch {}
 
-      // Persist proof to Supabase alongside the completion
       saveTaskCompletion(student.student_id, key, {
         completed: true,
         proof_name: file.name,
@@ -208,8 +213,8 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
     e.target.value = '';
   };
 
-  const removeProof = (year, taskText) => {
-    const key = taskKey(year, taskText);
+  const removeProof = (taskId) => {
+    const key = taskKey(taskId);
     const updatedProofs = { ...proofFiles };
     delete updatedProofs[key];
     setProofFiles(updatedProofs);
@@ -219,93 +224,7 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
     saveTaskCompletion(student.student_id, key, { completed: true }).catch(() => {});
   };
 
-  const getRoadmapTasks = (year) => {
-    if (!student) return [];
-    const tasks = {
-      1: [
-        // Self-Assessment & Planning
-        { task: 'Complete your PathwayU profile (Interests, Values, Personality, Workplace Preferences assessments) to explore career pathways aligned with your gifts', section: 'Self-Assessment & Planning', completed: false },
-        { task: 'Create or update your resume using Jobscan resume checker for initial formatting feedback', section: 'Self-Assessment & Planning', completed: false },
-        { task: 'Build your LinkedIn profile with a professional photo and headline', section: 'Self-Assessment & Planning', completed: false },
-        // Activate Your Platforms
-        { task: 'Log in to Handshake and complete your profile with skills, interests, and desired job/internship types', section: 'Activate Your Platforms', completed: false },
-        { task: 'Activate your St. Thomas Connect account to begin exploring the alumni network and fields of interest', section: 'Activate Your Platforms', completed: false },
-        { task: 'Set up automatic job feeds on Handshake tailored to your interests', section: 'Activate Your Platforms', completed: false },
-        // Build Foundations Through Mentorship & Experience
-        { task: 'Connect with a trusted mentor – meet with a Career Educator at the CDC to discuss your interests and goals', section: 'Build Foundations Through Mentorship & Experience', completed: false },
-        { task: 'Attend introductory CDC workshops and events to build career awareness', section: 'Build Foundations Through Mentorship & Experience', completed: student.career_events_attended > 0 },
-        { task: 'Explore student clubs, activities, and part-time work relevant to your career interests (building early experience)', section: 'Build Foundations Through Mentorship & Experience', completed: false },
-        { task: 'Build early experience through summer jobs or volunteer opportunities to develop transferable skills', section: 'Build Foundations Through Mentorship & Experience', completed: false },
-        // Use Data for Exploration
-        { task: 'Use the Labor Market Tool to research job trends and growth opportunities in industries of interest', section: 'Use Data for Exploration', completed: false },
-        { task: 'Explore "What Can I Do With This Major?" resources to connect academic programs with career paths', section: 'Use Data for Exploration', completed: false },
-      ],
-      2: [
-        // Strategic Career Planning with Mentorship
-        { task: 'Create an initial career plan with a Career Educator at the CDC based on your interests, skills, and values from PathwayU', section: 'Strategic Career Planning with Mentorship', completed: false },
-        { task: 'Schedule regular mentoring sessions with a trusted advisor to discuss your major/minor choice and career direction', section: 'Strategic Career Planning with Mentorship', completed: false },
-        { task: 'Conduct informational interviews or job shadows with professionals in your target fields to clarify your interests', section: 'Strategic Career Planning with Mentorship', completed: false },
-        // Research & Network Strategically
-        { task: 'Use the Labor Market Tool to identify high-demand roles, salary expectations, and growth opportunities in your target fields', section: 'Research & Network Strategically', completed: false },
-        { task: "Leverage Jobscan to analyze job descriptions in roles you're targeting and identify key skills employers seek", section: 'Research & Network Strategically', completed: false },
-        { task: 'Use St. Thomas Connect to find alumni in your target industries and request informational interviews', section: 'Research & Network Strategically', completed: false },
-        { task: 'Search and explore internship & job postings on Handshake to understand typical qualifications and skill requirements', section: 'Research & Network Strategically', completed: student.job_applications_count > 0 },
-        { task: 'Attend CDC workshops and events, including on-campus career fairs, to practice networking skills and connect with employers', section: 'Research & Network Strategically', completed: student.career_events_attended >= 3 },
-        // Build Your Professional Foundation
-        { task: 'Update your resume & personal statement based on Handshake job descriptions and Jobscan feedback', section: 'Build Your Professional Foundation', completed: false },
-        { task: 'Have your resume reviewed at the CDC by a career professional', section: 'Build Your Professional Foundation', completed: false },
-        { task: 'Establish & grow your personal and professional network—everyone counts: classmates, peers, faculty, staff, friends, family, and co-workers', section: 'Build Your Professional Foundation', completed: false },
-        { task: 'Join professional associations or student organizations related to your major and career interests', section: 'Build Your Professional Foundation', completed: false },
-      ],
-      3: [
-        // Gain Meaningful Experiential Learning
-        { task: 'Find internships on Handshake using Labor Market Tool insights to identify relevant companies and industries', section: 'Gain Meaningful Experiential Learning', completed: student.job_applications_count >= 5 },
-        { task: 'Apply for leadership positions, research opportunities, or part-time roles that build career-relevant skills', section: 'Gain Meaningful Experiential Learning', completed: false },
-        { task: 'Gain relevant experience through internships, leadership positions, volunteer work, research, or employment', section: 'Gain Meaningful Experiential Learning', completed: false },
-        { task: 'Reflect on your experiences and discuss career implications with your CDC mentor or advisor', section: 'Gain Meaningful Experiential Learning', completed: false },
-        // Practice & Polish Your Professional Skills
-        { task: 'Schedule a Big Interview session or mock interview with the CDC to practice in a low-stakes setting', section: 'Practice & Polish Your Professional Skills', completed: interviews.length > 0 },
-        { task: 'Use Big Interview to practice interview skills with AI-powered video coaching and receive personalized feedback', section: 'Practice & Polish Your Professional Skills', completed: false },
-        { task: 'Research target careers, industries, potential employers, and graduate school possibilities using Handshake and Labor Market Tool', section: 'Practice & Polish Your Professional Skills', completed: false },
-        { task: 'Build & polish your brand on LinkedIn using the St. Thomas LinkedIn Optimization Guide', section: 'Practice & Polish Your Professional Skills', completed: false },
-        { task: 'Optimize your Handshake profile to increase visibility to employers searching for candidates with your experience', section: 'Practice & Polish Your Professional Skills', completed: false },
-        // Expand Your Professional Network
-        { task: 'Connect with employers at Handshake career & opportunity fairs, both on and off-campus', section: 'Expand Your Professional Network', completed: student.career_events_attended >= 5 },
-        { task: 'Use St. Thomas Connect to expand your professional network and find alumni mentors at target companies', section: 'Expand Your Professional Network', completed: false },
-        { task: 'Identify and join professional associations related to your career interests (e.g., industry groups, regional chapters)', section: 'Expand Your Professional Network', completed: false },
-        { task: 'Continue building relationships with peers, mentors, and professionals in your field', section: 'Expand Your Professional Network', completed: false },
-        { task: 'Attend networking events, informational sessions, and industry conferences when possible', section: 'Expand Your Professional Network', completed: student.career_events_attended >= 7 },
-        // Optimize Your Application Materials
-        { task: "Use Jobscan to align your resume and LinkedIn profile keywords with job descriptions you're targeting", section: 'Optimize Your Application Materials', completed: false },
-        { task: 'Get feedback from CDC advisors and mentors on your resume and application materials', section: 'Optimize Your Application Materials', completed: false },
-        { task: 'Tailor your resume and LinkedIn profile for roles you\'re targeting', section: 'Optimize Your Application Materials', completed: applications.length >= 3 },
-      ],
-      4: [
-        // Strategic Job Search
-        { task: 'Search for full-time positions on Handshake using Labor Market Tool salary and location filters to make informed decisions', section: 'Strategic Job Search', completed: student.job_applications_count >= 7 },
-        { task: 'Continually develop & refine your LinkedIn profile and resume using Jobscan feedback as you apply', section: 'Strategic Job Search', completed: false },
-        { task: 'Prepare and submit applications for employment or graduate/professional schools', section: 'Strategic Job Search', completed: student.job_applications_count >= 10 },
-        { task: 'Cast a wider net: use multiple job boards in addition to Handshake for maximum opportunity exposure', section: 'Strategic Job Search', completed: false },
-        // Master the Interview Process
-        { task: 'Use Big Interview for final interview prep before company meetings and final rounds', section: 'Master the Interview Process', completed: false },
-        { task: 'Practice with CDC-facilitated mock interviews to refine your storytelling and responses', section: 'Master the Interview Process', completed: interviews.length > 0 },
-        { task: 'Ask mentors or alumni for feedback on your interview approach', section: 'Master the Interview Process', completed: false },
-        // Leverage Your Network & Alumni Connections
-        { task: 'Nurture your network: attend student/alumni and networking events, and find chances for one-on-one informational meetings', section: 'Leverage Your Network & Alumni Connections', completed: student.career_events_attended >= 10 },
-        { task: 'Use St. Thomas Connect to reconnect with alumni and request coffee chats, mentorship, or informational interviews', section: 'Leverage Your Network & Alumni Connections', completed: false },
-        { task: 'Connect with employers at Handshake-hosted career fairs, company information sessions, and student club events', section: 'Leverage Your Network & Alumni Connections', completed: false },
-        { task: 'Leverage Handshake messaging to follow up with recruiters and build relationships', section: 'Leverage Your Network & Alumni Connections', completed: false },
-        { task: 'Activate your trusted mentors and advisors for encouragement and next-step guidance as you navigate your search', section: 'Leverage Your Network & Alumni Connections', completed: false },
-        // Negotiate & Close Your Offer
-        { task: 'Attend CDC workshops on negotiating salary and benefits to advocate for yourself effectively', section: 'Negotiate & Close Your Offer', completed: false },
-        { task: 'Use Labor Market Tool salary data to inform your negotiation discussions', section: 'Negotiate & Close Your Offer', completed: false },
-        { task: 'Consult with your mentors or CDC advisor on evaluating offers and making your decision', section: 'Negotiate & Close Your Offer', completed: false },
-        { task: 'Have professional attire ready for interviews and in-person meetings', section: 'Negotiate & Close Your Offer', completed: false },
-        { task: 'Close the loop by informing your network and mentors once you\'ve accepted a position', section: 'Negotiate & Close Your Offer', completed: false },
-      ]
-    };
-    return tasks[year] || [];
-  };
+  const getRoadmapTasks = (year) => roadmapTasks[year] || [];
 
   const generateRecommendations = () => {
     if (!student) return [];
@@ -315,7 +234,7 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
     const hasIncomplete = (...sections) =>
       yearsToCheck.some(y =>
         getRoadmapTasks(y).some(
-          t => sections.includes(t.section) && !isTaskCompleted(y, t.task, t.completed)
+          t => sections.includes(t.section) && !isTaskCompleted(t.id)
         )
       );
 
@@ -634,65 +553,60 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
                           <button onClick={() => setUploadError('')} className="ml-auto font-bold hover:text-red-900">✕</button>
                         </div>
                       )}
-                      {Object.entries(groupTasksBySection(getRoadmapTasks(year))).map(([sectionName, sectionTasks]) => (
-                        <div key={sectionName}>
-                          <p className="text-xs font-bold text-purple-700 uppercase tracking-wider mb-2 px-1">{sectionName}</p>
-                          <div className="space-y-2">
-                            {sectionTasks.map((task, idx) => {
-                              const key = taskKey(year, task.task);
-                              const completed = isTaskCompleted(year, task.task, task.completed);
-                              const proof = proofFiles[key];
-                              return (
-                                <div key={idx} className="border-2 border-purple-200 rounded-lg overflow-hidden bg-gradient-to-r from-purple-50 to-pink-50">
-                                  <button
-                                    onClick={() => toggleTaskCompletion(year, task.task, task.completed)}
-                                    className="w-full p-4 flex gap-4 text-left hover:bg-purple-100 transition"
-                                  >
-                                    <span className="text-xl flex-shrink-0 mt-0.5">{completed ? '✅' : '⭕'}</span>
-                                    <p className={`text-sm leading-snug flex-1 ${completed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                                      {task.task}
-                                    </p>
-                                  </button>
-
-                                  {completed && (
-                                    <div className="px-4 py-2 bg-white border-t border-purple-100 flex items-center gap-3 flex-wrap">
-                                      {proof ? (
-                                        <>
-                                          {proof.type?.startsWith('image/') ? (
-                                            <a href={proof.dataUrl} target="_blank" rel="noopener noreferrer">
-                                              <img src={proof.dataUrl} alt="proof" className="h-9 w-9 object-cover rounded border border-purple-200 hover:opacity-80 transition" />
-                                            </a>
-                                          ) : (
-                                            <span className="text-purple-500 text-base">📎</span>
-                                          )}
-                                          <span className="text-xs text-green-700 font-medium truncate max-w-[200px]">{proof.name}</span>
-                                          <span className="text-xs text-gray-400">({(proof.size / 1024).toFixed(0)} KB)</span>
-                                          <button
-                                            onClick={() => removeProof(year, task.task)}
-                                            className="ml-auto text-xs text-red-400 hover:text-red-600 font-medium"
-                                          >
-                                            Remove
-                                          </button>
-                                        </>
-                                      ) : (
-                                        <label className="flex items-center gap-1.5 text-xs text-purple-600 hover:text-purple-800 cursor-pointer font-medium py-1">
-                                          <span>📎</span> Attach proof (optional)
-                                          <input
-                                            type="file"
-                                            accept="image/*,.pdf,.doc,.docx"
-                                            className="hidden"
-                                            onChange={(e) => handleProofUpload(year, task.task, e)}
-                                          />
-                                        </label>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
+                      {tasksLoading ? (
+                        <p className="text-sm text-gray-400 text-center py-6">Loading tasks...</p>
+                      ) : getRoadmapTasks(year).length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-6">No tasks configured for this year.</p>
+                      ) : (
+                        Object.entries(groupTasksBySection(getRoadmapTasks(year))).map(([sectionName, sectionTasks]) => (
+                          <div key={sectionName}>
+                            <p className="text-xs font-bold text-purple-700 uppercase tracking-wider mb-2 px-1">{sectionName}</p>
+                            <div className="space-y-2">
+                              {sectionTasks.map((task) => {
+                                const key = taskKey(task.id);
+                                const completed = isTaskCompleted(task.id);
+                                const proof = proofFiles[key];
+                                return (
+                                  <div key={task.id} className="border-2 border-purple-200 rounded-lg overflow-hidden bg-gradient-to-r from-purple-50 to-pink-50">
+                                    <button
+                                      onClick={() => toggleTaskCompletion(task)}
+                                      className="w-full p-4 flex gap-4 text-left hover:bg-purple-100 transition"
+                                    >
+                                      <span className="text-xl flex-shrink-0 mt-0.5">{completed ? '✅' : '⭕'}</span>
+                                      <p className={`text-sm leading-snug flex-1 ${completed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                                        {task.task_text}
+                                      </p>
+                                    </button>
+                                    {completed && (
+                                      <div className="px-4 py-2 bg-white border-t border-purple-100 flex items-center gap-3 flex-wrap">
+                                        {proof ? (
+                                          <>
+                                            {proof.type?.startsWith('image/') ? (
+                                              <a href={proof.dataUrl} target="_blank" rel="noopener noreferrer">
+                                                <img src={proof.dataUrl} alt="proof" className="h-9 w-9 object-cover rounded border border-purple-200 hover:opacity-80 transition" />
+                                              </a>
+                                            ) : (
+                                              <span className="text-purple-500 text-base">📎</span>
+                                            )}
+                                            <span className="text-xs text-green-700 font-medium truncate max-w-[200px]">{proof.name}</span>
+                                            <span className="text-xs text-gray-400">({(proof.size / 1024).toFixed(0)} KB)</span>
+                                            <button onClick={() => removeProof(task.id)} className="ml-auto text-xs text-red-400 hover:text-red-600 font-medium">Remove</button>
+                                          </>
+                                        ) : (
+                                          <label className="flex items-center gap-1.5 text-xs text-purple-600 hover:text-purple-800 cursor-pointer font-medium py-1">
+                                            <span>📎</span> Attach proof (optional)
+                                            <input type="file" accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={(e) => handleProofUpload(task.id, e)} />
+                                          </label>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   )}
                 </div>
