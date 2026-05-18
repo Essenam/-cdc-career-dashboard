@@ -1,43 +1,35 @@
-import React, { useState, useRef } from 'react';
-import { searchStudents, loginStaff } from '../services/api';
+import React, { useState } from 'react';
+import { getStudentProfile, loginStaff } from '../services/api';
 
 function LoginPage({ onLogin }) {
   const [role, setRole] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+  const [studentId, setStudentId] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const searchTimeout = useRef(null);
 
   const reset = () => {
     setRole(null);
     setError('');
-    setSearchQuery('');
-    setSearchResults([]);
+    setStudentId('');
     setPassword('');
   };
 
-  const handleSearchChange = (e) => {
-    const val = e.target.value;
-    setSearchQuery(val);
+  const handleStudentLogin = async (e) => {
+    e.preventDefault();
+    const id = studentId.trim();
+    if (!id) return;
+    setLoading(true);
     setError('');
-    clearTimeout(searchTimeout.current);
-    if (val.trim().length < 2) { setSearchResults([]); return; }
-    searchTimeout.current = setTimeout(async () => {
-      try {
-        const res = await searchStudents(val.trim());
-        setSearchResults(res.data || []);
-      } catch { setSearchResults([]); }
-    }, 300);
-  };
-
-  const handleStudentSelect = (s) => {
-    onLogin({
-      role: 'student',
-      studentId: s.student_id,
-      name: s.first_name || s.full_name
-    });
+    try {
+      const res = await getStudentProfile(id);
+      const s = res.data;
+      onLogin({ role: 'student', studentId: s.student_id, name: s.first_name || s.full_name });
+    } catch {
+      setError('Student ID not found. Please check your ID and try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleStaffLogin = async (e) => {
@@ -93,37 +85,26 @@ function LoginPage({ onLogin }) {
               ← Back
             </button>
             <h2 className="text-2xl font-bold text-gray-900 mb-1">Student Login</h2>
-            <p className="text-gray-500 text-sm mb-6">Search by your name or student ID</p>
+            <p className="text-gray-500 text-sm mb-6">Enter your student ID to access your dashboard</p>
 
-            <div className="relative">
+            <form onSubmit={handleStudentLogin} className="space-y-4">
               <input
                 type="text"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                placeholder="Enter your name or student ID..."
+                value={studentId}
+                onChange={(e) => { setStudentId(e.target.value); setError(''); }}
+                placeholder="Your student ID (e.g. STU001)"
                 className="w-full border-2 border-purple-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:border-purple-600"
                 autoFocus
               />
-              {searchResults.length > 0 && (
-                <ul className="absolute z-10 w-full bg-white border-2 border-purple-200 rounded-lg mt-1 shadow-lg overflow-hidden">
-                  {searchResults.map((s) => (
-                    <li key={s.student_id}>
-                      <button
-                        onClick={() => handleStudentSelect(s)}
-                        className="w-full text-left px-4 py-3 hover:bg-purple-50 transition border-b border-purple-100 last:border-0"
-                      >
-                        <p className="font-semibold text-gray-900">{s.full_name}</p>
-                        <p className="text-sm text-gray-500">{s.student_id}{s.major ? ` · ${s.major}` : ''}</p>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {searchQuery.length >= 2 && searchResults.length === 0 && !loading && (
-                <p className="mt-2 text-sm text-gray-500">No students found. Try a different search.</p>
-              )}
-            </div>
-            {error && <p className="mt-4 text-red-600 text-sm">{error}</p>}
+              {error && <p className="text-red-600 text-sm">{error}</p>}
+              <button
+                type="submit"
+                disabled={loading || !studentId.trim()}
+                className="w-full bg-gradient-to-r from-purple-700 to-pink-600 text-white font-bold py-3 rounded-lg hover:shadow-lg transition disabled:opacity-50"
+              >
+                {loading ? 'Looking up...' : 'Continue'}
+              </button>
+            </form>
           </div>
         )}
 
