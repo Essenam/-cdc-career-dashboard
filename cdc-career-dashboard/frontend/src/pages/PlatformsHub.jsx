@@ -131,9 +131,6 @@ function PlatformsHub({ setView }) {
                     <span className="block">High-Impact Practices:</span>
                     {platform.practice}
                   </p>
-                  <p className="text-xs text-white text-opacity-75">
-                    <span className="font-semibold">Best for:</span> {platform.year}
-                  </p>
                 </div>
 
                 <div className="mt-4 w-full bg-white text-gray-800 font-semibold py-2 rounded-lg text-sm text-center">
