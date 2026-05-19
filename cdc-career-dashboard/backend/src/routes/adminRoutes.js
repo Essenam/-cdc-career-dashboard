@@ -15,12 +15,13 @@ function getEventTriggers(eventTitle) {
   return values;
 }
 
-function getAppointmentTriggers(topic) {
-  const t = (topic || '').toLowerCase();
+function getAppointmentTriggers(appointmentTypes) {
+  // appointmentTypes may be a semicolon-separated list, e.g. "Resume Review; Career Planning"
+  const t = (appointmentTypes || '').toLowerCase();
   const values = ['appointment:any'];
   if (t.includes('resume')) values.push('appointment:resume');
   if (t.includes('mock') || t.includes('interview')) values.push('appointment:mock');
-  if (t.includes('offer') || t.includes('negotiat')) values.push('appointment:offer');
+  if (t.includes('offer') || t.includes('negotiat') || t.includes('salary')) values.push('appointment:offer');
   return values;
 }
 
@@ -237,6 +238,11 @@ async function ensureStudentRecord(studentId, fields = {}) {
     if (fields.email) updates.email = fields.email;
     if (fields.major) updates.major = fields.major;
     if (fields.graduation_date) updates.graduation_date = fields.graduation_date;
+    // Set current_year from school_year or graduation_date if we have it
+    if (fields.school_year || fields.graduation_date) {
+      const derivedYear = deriveCurrentYear(fields.school_year || null, fields.graduation_date || null);
+      if (derivedYear) updates.current_year = derivedYear;
+    }
 
     if (Object.keys(updates).length > 0) {
       updates.updated_at = new Date().toISOString();
@@ -500,17 +506,27 @@ async function processAppointments(filePath) {
     fs.createReadStream(filePath)
       .pipe(csv({ separator: sep }))
       .on('data', (row) => {
+        const firstName  = row['Student First Name'] || row['First Name'] || '';
+        const lastName   = row['Student Last Name']  || row['Last Name']  || '';
+        const staffFirst = row['Staff Member First Name'] || '';
+        const staffLast  = row['Staff Member Last Name']  || '';
+        // "Name List" fields may contain semicolon-separated values — take first for storage
+        const major      = (row['Student Majors (at Appt. Time) Name List'] || row['Major'] || '').split(';')[0].trim();
+        const schoolYear = (row['Student School Year (at Appt. Time) Name List'] || '').split(';')[0].trim();
+        // Appointment Types Name List is the structured type — used for trigger matching
+        const apptTypes  = row['Appointment Types Name List'] || row['Content'] || '';
+
         records.push({
-          student_id: row['Card Id'],
-          full_name: row['Student Name'] || '',
-          first_name: row['First Name'] || '',
-          last_name: row['Last Name'] || '',
-          email: row['Email'] || '',
-          major: row['Major'] || '',
-          topic: row['Content'],
-          appointment_date: row['Start Date Time'],
-          duration_minutes: parseInt(row['Minutes Advising Time']) || 30,
-          staff_name: row['Staff Name']
+          student_id:       row['Student Card Id'] || row['Card Id'],
+          first_name:       firstName,
+          last_name:        lastName,
+          full_name:        `${firstName} ${lastName}`.trim(),
+          major,
+          school_year:      schoolYear,
+          topic:            apptTypes,
+          description:      row['Appointments Description'] || '',
+          appointment_date: row['Appointments Start Date Date'] || row['Start Date Time'],
+          staff_name:       `${staffFirst} ${staffLast}`.trim() || row['Staff Name'] || '',
         });
       })
       .on('end', async () => {
@@ -523,22 +539,25 @@ async function processAppointments(filePath) {
             if (!record.student_id) continue;
 
             await ensureStudentRecord(record.student_id, {
-              full_name: record.full_name,
-              first_name: record.first_name,
-              last_name: record.last_name,
-              email: record.email,
-              major: record.major
+              full_name:   record.full_name,
+              first_name:  record.first_name,
+              last_name:   record.last_name,
+              major:       record.major,
+              school_year: record.school_year,
             });
 
             const { error } = await supabase
               .from('interview_appointments')
               .insert({
-                appt_id: genId('INT'),
-                student_id: record.student_id,
-                company_name: record.topic,
+                appt_id:        genId('INT'),
+                student_id:     record.student_id,
+                company_name:   record.topic,
                 scheduled_date: record.appointment_date,
-                duration_minutes: record.duration_minutes,
-                notes: record.staff_name ? `Advisor: ${record.staff_name}` : null,
+                duration_minutes: 30,
+                notes: [
+                  record.staff_name  ? `Advisor: ${record.staff_name}` : null,
+                  record.description ? `Notes: ${record.description}`  : null,
+                ].filter(Boolean).join(' · ') || null,
                 status: 'completed',
                 source: 'cdc'
               });

@@ -1,10 +1,10 @@
-Card Id,First Name,Last Name,Student Name,Email,Major,Start Date Time,Content,Checked In? (Yes / No),Minutes Advising Time,Staff Name
-STU001,Marcus,Johnson,Marcus Johnson,marcus.johnson@stthomas.edu,Business Administration,2026-03-10,CDC Mock Interview - Practiced behavioral questions,Yes,45,Sarah Mitchell
-STU001,Marcus,Johnson,Marcus Johnson,marcus.johnson@stthomas.edu,Business Administration,2026-04-15,Career Planning - Discussed offer from Target,Yes,30,Sarah Mitchell
-STU002,Priya,Patel,Priya Patel,priya.patel@stthomas.edu,Computer Science,2026-02-18,Resume Review - Updated technical skills section,Yes,30,David Park
-STU002,Priya,Patel,Priya Patel,priya.patel@stthomas.edu,Computer Science,2026-03-22,Career Planning - Interview prep for Microsoft,Yes,45,David Park
-STU003,Aisha,Williams,Aisha Williams,aisha.williams@stthomas.edu,Marketing,2026-03-20,Resume Review - Strengthened marketing experience,Yes,30,Sarah Mitchell
-STU004,Jordan,Chen,Jordan Chen,jordan.chen@stthomas.edu,Finance,2026-03-28,Career Planning - Prep for Wells Fargo interview,Yes,45,David Park
-STU007,Mei,Liu,Mei Liu,mei.liu@stthomas.edu,Data Science,2026-03-05,Career Planning - Reviewed Best Buy offer,Yes,45,Sarah Mitchell
-STU008,Caleb,Robinson,Caleb Robinson,caleb.robinson@stthomas.edu,Accounting,2026-04-12,Drop-in Advising - Resume basics overview,Yes,20,David Park
-STU010,Tyler,Anderson,Tyler Anderson,tyler.anderson@stthomas.edu,Political Science,2026-03-30,Career Planning - Discussed public sector pathways,Yes,45,Sarah Mitchell
+Student Card Id	Student First Name	Student Last Name	Appointments Start Date Date	Student College (at Appt. Time) Name	Staff Member First Name	Staff Member Last Name	Student Majors (at Appt. Time) Name List	Student School Year (at Appt. Time) Name List	Appointment Types Name List	Appointments Description
+STU001	Marcus	Johnson	2026-03-10	Opus College of Business	Sarah	Mitchell	Business Administration	Senior	Mock Interview	Practiced behavioral questions for upcoming UnitedHealth interview
+STU001	Marcus	Johnson	2026-04-15	Opus College of Business	Sarah	Mitchell	Business Administration	Senior	Career Planning	Discussed offer evaluation from Target Corporation
+STU002	Priya	Patel	2026-02-18	School of Engineering	David	Park	Computer Science	Senior	Resume Review	Updated technical skills section for software engineering roles
+STU002	Priya	Patel	2026-03-22	School of Engineering	David	Park	Computer Science	Senior	Mock Interview	Interview prep for Microsoft final round
+STU003	Aisha	Williams	2026-03-20	Opus College of Business	Sarah	Mitchell	Marketing	Junior	Resume Review	Strengthened marketing internship experience section
+STU004	Jordan	Chen	2026-03-28	Opus College of Business	David	Park	Finance	Junior	Career Planning	Prep for Wells Fargo interview; discussed finance career paths
+STU007	Mei	Liu	2026-03-05	School of Engineering	Sarah	Mitchell	Data Science	Senior	Career Planning	Reviewed Best Buy offer; discussed negotiation strategy
+STU008	Caleb	Robinson	2026-04-12	Opus College of Business	David	Park	Accounting	Sophomore	Drop-in Advising	Resume basics overview; encouraged to attend career fair
+STU010	Tyler	Anderson	2026-03-30	College of Arts and Sciences	Sarah	Mitchell	Political Science	Senior	Career Planning	Discussed public sector pathways and policy internship options
