@@ -116,7 +116,6 @@ router.get('/dashboard', async (req, res) => {
       .select('student_id, risk_level, engagement_score');
 
     const totalStudents = allStudents?.length || 0;
-    const scores = allStudents?.map(s => s.engagement_score || 0) || [];
     const highRiskCount   = allStudents?.filter(s => s.risk_level === 'need outreach').length || 0;
     const mediumRiskCount = allStudents?.filter(s => s.risk_level === 'developing').length || 0;
     const lowRiskCount    = allStudents?.filter(s => s.risk_level === 'engaged').length || 0;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllStudents, getStudentsByRisk, getDashboardSummary, getStaffAnalytics } from '../services/api';
+import { getAllStudents, getDashboardSummary, getStaffAnalytics } from '../services/api';
 
 function StaffDashboard({ onViewStudent, refreshRef }) {
   const [allStudents, setAllStudents] = useState([]);
