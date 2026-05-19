@@ -7,7 +7,11 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
   const [analytics, setAnalytics] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(null);
-  const [filterRisk, setFilterRisk] = useState(null);
+  const [filterRisk, setFilterRisk]           = useState(null);
+  const [filterYear, setFilterYear]           = useState(null);
+  const [filterMajor, setFilterMajor]         = useState('');
+  const [filterSort, setFilterSort]           = useState('default');
+  const [filterAppStatus, setFilterAppStatus] = useState(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -47,18 +51,24 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleFilterRisk = async (level) => {
-    setFilterRisk(level);
+  const handleFilterRisk = (level) => {
+    setFilterRisk(level === filterRisk ? null : level);
+    setCurrentPage(1);
+  };
+
+  const clearAllFilters = () => {
+    setFilterRisk(null);
+    setFilterYear(null);
+    setFilterMajor('');
+    setFilterSort('default');
+    setFilterAppStatus(null);
     setSearch('');
     setCurrentPage(1);
-    setError('');
-    try {
-      const res = level === null ? await getAllStudents() : await getStudentsByRisk(level);
-      setAllStudents(res.data);
-    } catch (err) {
-      setError('Failed to filter students. Please try again.');
-    }
   };
+
+  const hasActiveFilters = filterRisk || filterYear || filterMajor || filterAppStatus || filterSort !== 'default' || search.trim();
+
+  const majors = [...new Set(allStudents.map(s => s.major).filter(Boolean))].sort();
 
   const getRiskColor = (level) => {
     const l = level?.toLowerCase();
@@ -68,15 +78,27 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
     return 'bg-gray-100 text-gray-600';
   };
 
-  const filteredStudents = allStudents.filter((s) => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return (
-      s.full_name?.toLowerCase().includes(q) ||
-      s.email?.toLowerCase().includes(q) ||
-      s.major?.toLowerCase().includes(q)
-    );
-  });
+  const filteredStudents = allStudents
+    .filter(s => {
+      if (filterRisk && s.risk_level !== filterRisk) return false;
+      if (filterYear && s.current_year !== filterYear) return false;
+      if (filterMajor && s.major !== filterMajor) return false;
+      if (filterAppStatus === 'interviewing' && !s.has_interview) return false;
+      if (filterAppStatus === 'accepted' && !s.has_accepted) return false;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        if (!s.full_name?.toLowerCase().includes(q) && !s.email?.toLowerCase().includes(q) && !s.major?.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (filterSort === 'name')       return (a.full_name || '').localeCompare(b.full_name || '');
+      if (filterSort === 'score_desc') return (b.engagement_score || 0) - (a.engagement_score || 0);
+      if (filterSort === 'score_asc')  return (a.engagement_score || 0) - (b.engagement_score || 0);
+      if (filterSort === 'events')     return (b.career_events_attended || 0) - (a.career_events_attended || 0);
+      if (filterSort === 'apps')       return (b.job_applications_count || 0) - (a.job_applications_count || 0);
+      return 0;
+    });
 
   if (loading) return <div className="p-4">Loading...</div>;
   if (error) return <div className="p-6 text-center text-red-600 font-medium">{error}</div>;
@@ -332,41 +354,94 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
       )}
 
       {/* Filters + Search */}
-      <div className="mb-6 flex flex-wrap gap-3 items-center">
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleFilterRisk(null)}
-            className={`px-4 py-2 rounded ${filterRisk === null ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => handleFilterRisk('need outreach')}
-            className={`px-4 py-2 rounded ${filterRisk === 'need outreach' ? 'bg-red-500 text-white' : 'bg-gray-200'}`}
-          >
-            Need Outreach
-          </button>
-          <button
-            onClick={() => handleFilterRisk('developing')}
-            className={`px-4 py-2 rounded ${filterRisk === 'developing' ? 'bg-yellow-500 text-white' : 'bg-gray-200'}`}
-          >
-            Developing
-          </button>
-          <button
-            onClick={() => handleFilterRisk('engaged')}
-            className={`px-4 py-2 rounded ${filterRisk === 'engaged' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
-          >
-            Engaged
-          </button>
+      <div className="mb-6 space-y-3">
+        {/* Row 1: Status + Year */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mr-1">Status</span>
+          {[
+            { label: 'Need Outreach', value: 'need outreach', active: 'bg-red-500 text-white', inactive: 'bg-gray-100 hover:bg-red-50 text-gray-700' },
+            { label: 'Developing',    value: 'developing',    active: 'bg-yellow-500 text-white', inactive: 'bg-gray-100 hover:bg-yellow-50 text-gray-700' },
+            { label: 'Engaged',       value: 'engaged',       active: 'bg-green-500 text-white', inactive: 'bg-gray-100 hover:bg-green-50 text-gray-700' },
+          ].map(({ label, value, active, inactive }) => (
+            <button key={value} onClick={() => handleFilterRisk(value)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${filterRisk === value ? active : inactive}`}>
+              {label}
+            </button>
+          ))}
+
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mx-2">Year</span>
+          {[1, 2, 3, 4].map(y => (
+            <button key={y}
+              onClick={() => { setFilterYear(filterYear === y ? null : y); setCurrentPage(1); }}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${filterYear === y ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-blue-50 text-gray-700'}`}>
+              Y{y}
+            </button>
+          ))}
         </div>
 
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-          placeholder="Search by name, email, or major..."
-          className="ml-auto border border-gray-300 rounded-lg px-4 py-2 text-sm w-72 focus:outline-none focus:border-blue-400"
-        />
+        {/* Row 2: Major + Sort + App Status + Search + Clear */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <select
+            value={filterMajor}
+            onChange={e => { setFilterMajor(e.target.value); setCurrentPage(1); }}
+            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-blue-400 bg-white"
+          >
+            <option value="">All Majors</option>
+            {majors.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+
+          <select
+            value={filterSort}
+            onChange={e => setFilterSort(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-blue-400 bg-white"
+          >
+            <option value="default">Sort: Default</option>
+            <option value="name">Name A → Z</option>
+            <option value="score_desc">Score: High → Low</option>
+            <option value="score_asc">Score: Low → High</option>
+            <option value="events">Most Events</option>
+            <option value="apps">Most Applications</option>
+          </select>
+
+          {[
+            { label: 'Interviewing', value: 'interviewing', color: 'bg-blue-500 text-white' },
+            { label: 'Accepted Offer', value: 'accepted', color: 'bg-green-500 text-white' },
+          ].map(({ label, value, color }) => (
+            <button key={value}
+              onClick={() => { setFilterAppStatus(filterAppStatus === value ? null : value); setCurrentPage(1); }}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${filterAppStatus === value ? color : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}>
+              {label}
+            </button>
+          ))}
+
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+            placeholder="Search name, email, major…"
+            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-56 focus:outline-none focus:border-blue-400 ml-auto"
+          />
+
+          {hasActiveFilters && (
+            <button onClick={clearAllFilters}
+              className="px-3 py-1.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 border border-red-200 transition">
+              Clear all
+            </button>
+          )}
+        </div>
+
+        {/* Active filter summary */}
+        {hasActiveFilters && (
+          <p className="text-xs text-gray-500">
+            Showing <span className="font-semibold text-gray-800">{filteredStudents.length}</span> of {allStudents.length} students
+            {filterRisk && <span> · Status: <span className="font-medium capitalize">{filterRisk}</span></span>}
+            {filterYear && <span> · Year {filterYear}</span>}
+            {filterMajor && <span> · {filterMajor}</span>}
+            {filterAppStatus === 'interviewing' && <span> · Currently interviewing</span>}
+            {filterAppStatus === 'accepted' && <span> · Accepted offer</span>}
+            {search.trim() && <span> · Search: "{search}"</span>}
+          </p>
+        )}
       </div>
 
       {/* Students Table */}

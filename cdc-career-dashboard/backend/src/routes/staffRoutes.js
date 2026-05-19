@@ -7,20 +7,32 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// GET all students (sorted by risk level)
+// GET all students — enriched with has_interview and has_accepted flags
 router.get('/students', async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('student_career_progress')
-      .select('*')
-      .order('risk_level', { ascending: false })
-      .order('engagement_score', { ascending: true });
+    const [studentsRes, appStatusRes] = await Promise.all([
+      supabase.from('student_career_progress').select('*')
+        .order('risk_level', { ascending: false })
+        .order('engagement_score', { ascending: true }),
+      supabase.from('job_applications').select('student_id, status')
+    ]);
 
-    if (error) {
-      return res.status(500).json({ error: error.message });
+    if (studentsRes.error) return res.status(500).json({ error: studentsRes.error.message });
+
+    const interviewStudents = new Set();
+    const acceptedStudents  = new Set();
+    for (const app of appStatusRes.data || []) {
+      if (app.status === 'interviewing') interviewStudents.add(app.student_id);
+      if (app.status === 'accepted')     acceptedStudents.add(app.student_id);
     }
 
-    res.json(data);
+    const enriched = (studentsRes.data || []).map(s => ({
+      ...s,
+      has_interview: interviewStudents.has(s.student_id),
+      has_accepted:  acceptedStudents.has(s.student_id)
+    }));
+
+    res.json(enriched);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
