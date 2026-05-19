@@ -118,8 +118,8 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
           </div>
           <div className="flex items-center justify-between mb-6">
             <p className="text-xs text-gray-400">
-              Completion % = milestones checked for each student's current year (manual check-ins + CSV-triggered auto-completions).
-              Need Outreach &lt; 33% · Developing 33–66% · On Track 67%+
+              Activity score = events (×20) + applications (×15) + CDC appointments (×10) from Handshake imports.
+              Need Outreach &lt; 33 · Developing 33–66 · On Track 67+
             </p>
             <button
               onClick={handleToggleAnalytics}
@@ -180,7 +180,7 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
               <div>
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
                   Engagement Distribution
-                  <span className="ml-2 font-normal text-gray-400 normal-case">Avg {analytics.engagement_score.avg}% · Median {analytics.engagement_score.median}%</span>
+                  <span className="ml-2 font-normal text-gray-400 normal-case">Avg {analytics.engagement_score.avg} · Median {analytics.engagement_score.median}</span>
                 </h3>
                 <div className="space-y-2">
                   {analytics.engagement_distribution.map(({ label, range, count }) => {
@@ -302,7 +302,7 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
                     <th className="border p-3 text-left">Name</th>
                     <th className="border p-3 text-left">Email</th>
                     <th className="border p-3 text-left">Major</th>
-                    <th className="border p-3 text-center">Completion %</th>
+                    <th className="border p-3 text-center">Activity Score</th>
                     <th className="border p-3 text-center">Status</th>
                     <th className="border p-3 text-center">Events</th>
                     <th className="border p-3 text-center">Apps</th>
@@ -328,7 +328,7 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
                         {student.email || <span className="text-gray-300 italic text-xs">not available</span>}
                       </td>
                       <td className="border p-3">{student.major || <span className="text-gray-300 italic text-xs">not available</span>}</td>
-                      <td className="border p-3 text-center text-gray-600">{student.engagement_score}%</td>
+                      <td className="border p-3 text-center text-gray-600">{student.engagement_score}</td>
                       <td className="border p-3 text-center">
                         <span className={`px-3 py-1 rounded text-xs font-semibold ${getRiskColor(student.risk_level)}`}>
                           {student.risk_level ? student.risk_level.charAt(0).toUpperCase() + student.risk_level.slice(1) : '—'}
