@@ -557,32 +557,79 @@ async function recalculateAllScores() {
 
 async function updateEngagementScore(studentId) {
   try {
-    const [eventsRes, appsRes, appointmentsRes] = await Promise.all([
+    // 1. Fetch student year and activity counts in parallel
+    const [studentRes, eventsRes, appsRes, appointmentsRes] = await Promise.all([
+      supabase.from('student_career_progress')
+        .select('current_year, class_year')
+        .eq('student_id', studentId)
+        .single(),
       supabase.from('career_events').select('event_id').eq('student_id', studentId),
       supabase.from('job_applications').select('app_id').eq('student_id', studentId),
       supabase.from('interview_appointments').select('appt_id').eq('student_id', studentId)
     ]);
 
     const eventCount = eventsRes.data?.length || 0;
-    const appCount = appsRes.data?.length || 0;
-    const appointmentCount = appointmentsRes.data?.length || 0;
+    const appCount   = appsRes.data?.length || 0;
+    const apptCount  = appointmentsRes.data?.length || 0;
 
-    const engagementScore = (eventCount * 20) + (appCount * 15) + (appointmentCount * 10);
+    const year = studentRes.data?.current_year || studentRes.data?.class_year || 2;
 
-    let riskLevel = 'on track';
-    if (engagementScore < 33)  riskLevel = 'need outreach';
-    else if (engagementScore < 67) riskLevel = 'developing';
+    // 2. Get all active tasks for this year (with their triggers)
+    const { data: yearTasks } = await supabase
+      .from('roadmap_tasks')
+      .select('id, trigger')
+      .eq('year', year)
+      .eq('active', true);
+
+    const totalTasks = yearTasks?.length || 0;
+    let completionPct = 0;
+
+    if (totalTasks > 0) {
+      // 3. Auto-insert task_completions for triggered tasks
+      const activityMap = { event: eventCount, application: appCount, appointment: apptCount };
+      const autoInserts = (yearTasks || [])
+        .filter(t => t.trigger && activityMap[t.trigger] > 0)
+        .map(t => ({
+          student_id: studentId,
+          task_key: `task_${t.id}`,
+          completed: true,
+          updated_at: new Date().toISOString()
+        }));
+
+      if (autoInserts.length > 0) {
+        await supabaseAdmin
+          .from('task_completions')
+          .upsert(autoInserts, { onConflict: 'student_id,task_key', ignoreDuplicates: true });
+      }
+
+      // 4. Count all completions for this year's tasks
+      const taskKeys = yearTasks.map(t => `task_${t.id}`);
+      const { data: completions } = await supabase
+        .from('task_completions')
+        .select('task_key')
+        .eq('student_id', studentId)
+        .eq('completed', true)
+        .in('task_key', taskKeys);
+
+      completionPct = Math.round(((completions?.length || 0) / totalTasks) * 100);
+    }
+
+    // 5. Update student record
+    const riskLevel = completionPct >= 67 ? 'on track'
+      : completionPct >= 33 ? 'developing'
+      : 'need outreach';
 
     await supabaseAdmin
       .from('student_career_progress')
       .update({
-        engagement_score: engagementScore,
+        engagement_score: completionPct,
         career_events_attended: eventCount,
         job_applications_count: appCount,
         risk_level: riskLevel,
         updated_at: new Date().toISOString()
       })
       .eq('student_id', studentId);
+
   } catch (error) {
     console.error('Error in updateEngagementScore:', error);
   }
