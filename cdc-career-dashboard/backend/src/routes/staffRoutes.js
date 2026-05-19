@@ -104,9 +104,10 @@ router.get('/dashboard', async (req, res) => {
       .select('student_id, risk_level, engagement_score');
 
     const totalStudents = allStudents?.length || 0;
-    const highRiskCount = allStudents?.filter(s => ['need outreach','high'].includes(s.risk_level?.toLowerCase())).length || 0;
-    const mediumRiskCount = allStudents?.filter(s => ['developing','medium'].includes(s.risk_level?.toLowerCase())).length || 0;
-    const lowRiskCount = allStudents?.filter(s => ['on track','low'].includes(s.risk_level?.toLowerCase())).length || 0;
+    const scores = allStudents?.map(s => s.engagement_score || 0) || [];
+    const highRiskCount = scores.filter(s => s < 33).length;
+    const mediumRiskCount = scores.filter(s => s >= 33 && s < 67).length;
+    const lowRiskCount = scores.filter(s => s >= 67).length;
     const avgEngagement = allStudents?.length > 0 
       ? Math.round(allStudents.reduce((sum, s) => sum + s.engagement_score, 0) / allStudents.length)
       : 0;
@@ -165,11 +166,9 @@ router.get('/analytics', async (req, res) => {
     const studentsWithCompletions = Object.keys(completionCountByStudent).length;
 
     const engagementDistribution = [
-      { label: 'No activity',  range: '0',      count: students.filter(s => (s.engagement_score || 0) === 0).length },
-      { label: 'Need Outreach',range: '1-49',   count: students.filter(s => (s.engagement_score || 0) > 0   && (s.engagement_score || 0) < 50).length },
-      { label: 'Developing',   range: '50-99',  count: students.filter(s => (s.engagement_score || 0) >= 50 && (s.engagement_score || 0) < 100).length },
-      { label: 'On Track',     range: '100-199',count: students.filter(s => (s.engagement_score || 0) >= 100 && (s.engagement_score || 0) < 200).length },
-      { label: 'Highly Active',range: '200+',   count: students.filter(s => (s.engagement_score || 0) >= 200).length },
+      { label: 'Need Outreach', range: '0–32',  count: students.filter(s => (s.engagement_score || 0) < 33).length },
+      { label: 'Developing',    range: '33–66', count: students.filter(s => (s.engagement_score || 0) >= 33 && (s.engagement_score || 0) < 67).length },
+      { label: 'On Track',      range: '67+',   count: students.filter(s => (s.engagement_score || 0) >= 67).length },
     ];
 
     const platformUsage = [

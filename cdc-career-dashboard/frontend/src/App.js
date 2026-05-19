@@ -4,6 +4,7 @@ import StudentDashboard from './pages/StudentDashboard';
 import PlatformsHub from './pages/PlatformsHub';
 import AdminDashboard from './pages/AdminDashboard';
 import LoginPage from './pages/LoginPage';
+import ErrorBoundary from './ErrorBoundary';
 import './App.css';
 
 function App() {
@@ -47,13 +48,14 @@ function App() {
   };
 
   if (!auth) {
-    return <LoginPage onLogin={handleLogin} />;
+    return <ErrorBoundary><LoginPage onLogin={handleLogin} /></ErrorBoundary>;
   }
 
   const isStudent = auth.role === 'student';
   const isStaff = auth.role === 'staff';
 
   return (
+    <ErrorBoundary>
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b shadow-sm px-6 py-3 flex items-center gap-4">
         <span className="font-bold text-lg text-purple-800">CDC Career Dashboard</span>
@@ -120,6 +122,7 @@ function App() {
       {view === 'platforms' && <PlatformsHub setView={handleSetView} />}
       {isStaff && view === 'admin' && <AdminDashboard onUploadComplete={handleUploadComplete} />}
     </div>
+    </ErrorBoundary>
   );
 }
 

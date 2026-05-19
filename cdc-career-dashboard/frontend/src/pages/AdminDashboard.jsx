@@ -23,6 +23,7 @@ function AdminDashboard({ onUploadComplete }) {
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
   const [editSection, setEditSection] = useState('');
+  const [editTrigger, setEditTrigger] = useState('');
   const [addingToSection, setAddingToSection] = useState(null);
   const [addText, setAddText] = useState('');
   const [newSectionName, setNewSectionName] = useState('');
@@ -94,11 +95,12 @@ function AdminDashboard({ onUploadComplete }) {
     setEditingId(task.id);
     setEditText(task.task_text);
     setEditSection(task.section);
+    setEditTrigger(task.trigger || '');
   };
 
   const saveEdit = async (id) => {
     try {
-      const res = await updateRoadmapTask(id, { task_text: editText, section: editSection });
+      const res = await updateRoadmapTask(id, { task_text: editText, section: editSection, trigger: editTrigger || null });
       setMilestones(ms => ms.map(m => m.id === id ? res.data : m));
       setEditingId(null);
     } catch { setMilestoneError('Failed to save changes.'); }
@@ -415,6 +417,16 @@ function AdminDashboard({ onUploadComplete }) {
                                   rows={2}
                                   className="w-full border border-purple-300 rounded px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-purple-600 resize-none"
                                 />
+                                <select
+                                  value={editTrigger}
+                                  onChange={e => setEditTrigger(e.target.value)}
+                                  className="w-full border border-purple-300 rounded px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-purple-600"
+                                >
+                                  <option value="">No auto-trigger (manual only)</option>
+                                  <option value="event">Auto-check when event imported</option>
+                                  <option value="application">Auto-check when application imported</option>
+                                  <option value="appointment">Auto-check when appointment imported</option>
+                                </select>
                                 <div className="flex gap-2">
                                   <button onClick={() => saveEdit(task.id)} className="px-3 py-1 bg-purple-700 text-white text-xs font-semibold rounded hover:bg-purple-800 transition">Save</button>
                                   <button onClick={() => setEditingId(null)} className="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-semibold rounded hover:bg-gray-300 transition">Cancel</button>
@@ -422,7 +434,14 @@ function AdminDashboard({ onUploadComplete }) {
                               </div>
                             ) : (
                               <div className="flex items-start gap-3 px-4 py-3">
-                                <p className="text-sm text-gray-800 flex-1 leading-snug">{task.task_text}</p>
+                                <div className="flex-1">
+                                  <p className="text-sm text-gray-800 leading-snug">{task.task_text}</p>
+                                  {task.trigger && (
+                                    <span className="inline-block mt-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                                      auto: {task.trigger}
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="flex gap-1 shrink-0">
                                   <button onClick={() => startEdit(task)} className="text-xs text-purple-600 hover:text-purple-900 font-medium px-2 py-1 rounded hover:bg-purple-100 transition">Edit</button>
                                   <button onClick={() => handleDelete(task.id)} className="text-xs text-red-400 hover:text-red-700 font-medium px-2 py-1 rounded hover:bg-red-50 transition">Delete</button>

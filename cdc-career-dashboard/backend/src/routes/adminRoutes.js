@@ -6,6 +6,29 @@ const { supabase, supabaseAdmin } = require('../config/db');
 
 const genId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+const SCHOOL_YEAR_MAP = {
+  'freshman': 1, '1st year': 1, 'first year': 1, 'first-year': 1,
+  'sophomore': 2, '2nd year': 2, 'second year': 2,
+  'junior': 3, '3rd year': 3, 'third year': 3,
+  'senior': 4, '4th year': 4, 'fourth year': 4,
+};
+
+function deriveCurrentYear(schoolYear, gradDate) {
+  if (schoolYear) {
+    const mapped = SCHOOL_YEAR_MAP[schoolYear.toLowerCase().trim()];
+    if (mapped) return mapped;
+    const parsed = parseInt(schoolYear);
+    if (parsed >= 1 && parsed <= 4) return parsed;
+  }
+  if (gradDate) {
+    const gradYear = new Date(gradDate).getFullYear();
+    const now = new Date().getFullYear();
+    const yr = 4 - (gradYear - now);
+    if (yr >= 1 && yr <= 4) return yr;
+  }
+  return null;
+}
+
 // Detect whether a file uses tabs or commas as delimiter
 function detectSeparator(filePath) {
   const firstLine = fs.readFileSync(filePath, 'utf8').split('\n')[0] || '';
@@ -166,7 +189,7 @@ async function ensureStudentRecord(studentId, fields = {}) {
       engagement_score: 0,
       career_events_attended: 0,
       job_applications_count: 0,
-      risk_level: 'high',
+      risk_level: 'need outreach',
       updated_at: new Date().toISOString()
     });
 
@@ -239,6 +262,8 @@ async function processStudentRoster(filePath) {
               if (r.email) updates.email = r.email;
               if (r.major) updates.major = r.major;
               if (r.gradDate) updates.graduation_date = r.gradDate;
+              const derivedYear = deriveCurrentYear(r.schoolYear, r.gradDate);
+              if (derivedYear) updates.current_year = derivedYear;
 
               const { error } = await supabaseAdmin
                 .from('student_career_progress')
@@ -257,10 +282,11 @@ async function processStudentRoster(filePath) {
                   email: r.email || '',
                   major: r.major || '',
                   graduation_date: r.gradDate || null,
+                  current_year: deriveCurrentYear(r.schoolYear, r.gradDate),
                   engagement_score: 0,
                   career_events_attended: 0,
                   job_applications_count: 0,
-                  risk_level: 'high',
+                  risk_level: 'need outreach',
                   updated_at: new Date().toISOString()
                 });
               if (!error) processed++;
@@ -544,8 +570,8 @@ async function updateEngagementScore(studentId) {
     const engagementScore = (eventCount * 20) + (appCount * 15) + (appointmentCount * 10);
 
     let riskLevel = 'on track';
-    if (engagementScore < 50)  riskLevel = 'need outreach';
-    else if (engagementScore < 100) riskLevel = 'developing';
+    if (engagementScore < 33)  riskLevel = 'need outreach';
+    else if (engagementScore < 67) riskLevel = 'developing';
 
     await supabaseAdmin
       .from('student_career_progress')

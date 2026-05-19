@@ -10,6 +10,8 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 25;
 
   const fetchData = async () => {
     setLoading(true);
@@ -47,6 +49,7 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
   const handleFilterRisk = async (level) => {
     setFilterRisk(level);
     setSearch('');
+    setCurrentPage(1);
     setError('');
     try {
       const res = level === null ? await getAllStudents() : await getStudentsByRisk(level);
@@ -115,8 +118,8 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
           </div>
           <div className="flex items-center justify-between mb-6">
             <p className="text-xs text-gray-400">
-              Engagement is scored from platform activity: events (×20) + applications (×15) + CDC appointments (×10).
-              Need Outreach = score &lt; 50 · Developing = 50–99 · On Track = 100+
+              Activity score = events (×20) + applications (×15) + CDC appointments (×10).
+              Need Outreach &lt; 33 · Developing 33–66 · On Track 67+. Score will be replaced by milestone completion % once students begin self-reporting.
             </p>
             <button
               onClick={handleToggleAnalytics}
@@ -182,7 +185,7 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
                 <div className="space-y-2">
                   {analytics.engagement_distribution.map(({ label, range, count }) => {
                     const pct = analytics.total_students > 0 ? Math.round(count / analytics.total_students * 100) : 0;
-                    const barColor = label === 'No activity' || label === 'Minimal' ? 'bg-red-400' : label === 'Developing' ? 'bg-yellow-400' : label === 'Active' ? 'bg-blue-400' : 'bg-green-500';
+                    const barColor = label === 'Need Outreach' ? 'bg-red-400' : label === 'Developing' ? 'bg-yellow-400' : 'bg-green-500';
                     return (
                       <div key={label} className="flex items-center gap-3">
                         <div className="w-24 text-right">
@@ -280,67 +283,108 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
           placeholder="Search by name, email, or major..."
           className="ml-auto border border-gray-300 rounded-lg px-4 py-2 text-sm w-72 focus:outline-none focus:border-blue-400"
         />
       </div>
 
       {/* Students Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border p-3 text-left">Name</th>
-              <th className="border p-3 text-left">Email</th>
-              <th className="border p-3 text-left">Major</th>
-              <th className="border p-3 text-center">Engagement</th>
-              <th className="border p-3 text-center">Risk</th>
-              <th className="border p-3 text-center">Events</th>
-              <th className="border p-3 text-center">Apps</th>
-              <th className="border p-3 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredStudents.length === 0 && (
-              <tr>
-                <td colSpan={8} className="border p-6 text-center text-gray-500">
-                  No students match your search.
-                </td>
-              </tr>
-            )}
-            {filteredStudents.map((student) => (
-              <tr
-                key={student.student_id}
-                className="hover:bg-blue-50 cursor-pointer transition"
-                onClick={() => onViewStudent && onViewStudent(student.student_id)}
-              >
-                <td className="border p-3 font-medium text-blue-700">{student.full_name}</td>
-                <td className="border p-3 text-gray-600">
-                  {student.email || <span className="text-gray-300 italic text-xs">not available</span>}
-                </td>
-                <td className="border p-3">{student.major || <span className="text-gray-300 italic text-xs">not available</span>}</td>
-                <td className="border p-3 text-center">{student.engagement_score}</td>
-                <td className="border p-3 text-center">
-                  <span className={`px-3 py-1 rounded text-sm font-semibold ${getRiskColor(student.risk_level)}`}>
-                    {student.risk_level?.toUpperCase()}
-                  </span>
-                </td>
-                <td className="border p-3 text-center">{student.career_events_attended}</td>
-                <td className="border p-3 text-center">{student.job_applications_count}</td>
-                <td className="border p-3 text-center">
+      {(() => {
+        const totalPages = Math.ceil(filteredStudents.length / PAGE_SIZE);
+        const pageStudents = filteredStudents.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+        return (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border p-3 text-left">Name</th>
+                    <th className="border p-3 text-left">Email</th>
+                    <th className="border p-3 text-left">Major</th>
+                    <th className="border p-3 text-center">Activity Score</th>
+                    <th className="border p-3 text-center">Status</th>
+                    <th className="border p-3 text-center">Events</th>
+                    <th className="border p-3 text-center">Apps</th>
+                    <th className="border p-3 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageStudents.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="border p-6 text-center text-gray-500">
+                        No students match your search.
+                      </td>
+                    </tr>
+                  )}
+                  {pageStudents.map((student) => (
+                    <tr
+                      key={student.student_id}
+                      className="hover:bg-blue-50 cursor-pointer transition"
+                      onClick={() => onViewStudent && onViewStudent(student.student_id)}
+                    >
+                      <td className="border p-3 font-medium text-blue-700">{student.full_name}</td>
+                      <td className="border p-3 text-gray-600">
+                        {student.email || <span className="text-gray-300 italic text-xs">not available</span>}
+                      </td>
+                      <td className="border p-3">{student.major || <span className="text-gray-300 italic text-xs">not available</span>}</td>
+                      <td className="border p-3 text-center text-gray-600">{student.engagement_score}</td>
+                      <td className="border p-3 text-center">
+                        <span className={`px-3 py-1 rounded text-xs font-semibold ${getRiskColor(student.risk_level)}`}>
+                          {student.risk_level ? student.risk_level.charAt(0).toUpperCase() + student.risk_level.slice(1) : '—'}
+                        </span>
+                      </td>
+                      <td className="border p-3 text-center">{student.career_events_attended}</td>
+                      <td className="border p-3 text-center">{student.job_applications_count}</td>
+                      <td className="border p-3 text-center">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onViewStudent && onViewStudent(student.student_id); }}
+                          className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition"
+                        >
+                          View Journey →
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+                <p>
+                  Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredStudents.length)} of {filteredStudents.length} students
+                </p>
+                <div className="flex gap-1">
                   <button
-                    onClick={(e) => { e.stopPropagation(); onViewStudent && onViewStudent(student.student_id); }}
-                    className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 rounded border bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    View Journey →
+                    ←
                   </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setCurrentPage(p)}
+                      className={`px-3 py-1 rounded border ${p === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'bg-white hover:bg-gray-50'}`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 rounded border bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }

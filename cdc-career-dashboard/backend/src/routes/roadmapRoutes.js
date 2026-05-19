@@ -7,7 +7,7 @@ router.get('/', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('roadmap_tasks')
-      .select('id, year, section, task_text, order_index')
+      .select('id, year, section, task_text, order_index, trigger')
       .eq('active', true)
       .order('year')
       .order('order_index');
@@ -36,13 +36,13 @@ router.get('/admin', async (req, res) => {
 // POST create task
 router.post('/', async (req, res) => {
   try {
-    const { year, section, task_text, order_index } = req.body;
+    const { year, section, task_text, order_index, trigger } = req.body;
     if (!year || !section?.trim() || !task_text?.trim()) {
       return res.status(400).json({ error: 'year, section, and task_text are required.' });
     }
     const { data, error } = await supabaseAdmin
       .from('roadmap_tasks')
-      .insert({ year, section: section.trim(), task_text: task_text.trim(), order_index: order_index ?? 0, active: true })
+      .insert({ year, section: section.trim(), task_text: task_text.trim(), order_index: order_index ?? 0, active: true, trigger: trigger || null })
       .select()
       .single();
     if (error) return res.status(500).json({ error: error.message });
@@ -56,7 +56,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const updates = { updated_at: new Date().toISOString() };
-    const fields = ['task_text', 'section', 'year', 'order_index', 'active'];
+    const fields = ['task_text', 'section', 'year', 'order_index', 'active', 'trigger'];
     for (const f of fields) {
       if (req.body[f] !== undefined) updates[f] = typeof req.body[f] === 'string' ? req.body[f].trim() : req.body[f];
     }
