@@ -100,6 +100,30 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
       return 0;
     });
 
+  const exportCSV = () => {
+    const headers = ['Name', 'Email', 'Major', 'Year', 'Status', 'Activity Score', 'Events', 'Applications', 'Interviewing', 'Accepted Offer'];
+    const rows = filteredStudents.map(s => [
+      s.full_name || '',
+      s.email || '',
+      s.major || '',
+      s.current_year ? `Year ${s.current_year}` : '',
+      s.risk_level || '',
+      s.engagement_score ?? '',
+      s.career_events_attended ?? '',
+      s.job_applications_count ?? '',
+      s.has_interview ? 'Yes' : 'No',
+      s.has_accepted  ? 'Yes' : 'No',
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `cdc-students-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) return <div className="p-4">Loading...</div>;
   if (error) return <div className="p-6 text-center text-red-600 font-medium">{error}</div>;
 
@@ -107,13 +131,21 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Staff Dashboard</h1>
-        <button
-          onClick={fetchData}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
-        >
-          {loading ? 'Refreshing...' : 'Refresh'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={exportCSV}
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg transition border border-gray-300"
+          >
+            Export CSV
+          </button>
+          <button
+            onClick={fetchData}
+            disabled={loading}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50"
+          >
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       {/* Summary Stats */}
