@@ -6,6 +6,30 @@ const { supabase, supabaseAdmin } = require('../config/db');
 
 const genId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+// Determine which trigger values apply based on activity content
+function getEventTriggers(eventTitle) {
+  const t = (eventTitle || '').toLowerCase();
+  const values = ['event:any'];
+  if (t.includes('fair')) values.push('event:career_fair');
+  if (t.includes('negotiat') || t.includes('salary')) values.push('event:negotiation');
+  return values;
+}
+
+function getAppointmentTriggers(topic) {
+  const t = (topic || '').toLowerCase();
+  const values = ['appointment:any'];
+  if (t.includes('resume')) values.push('appointment:resume');
+  if (t.includes('mock') || t.includes('interview')) values.push('appointment:mock');
+  if (t.includes('offer') || t.includes('negotiat')) values.push('appointment:offer');
+  return values;
+}
+
+function getApplicationTriggers(status) {
+  const values = ['application:any'];
+  if ((status || '').toLowerCase() === 'accepted') values.push('application:accepted');
+  return values;
+}
+
 const SCHOOL_YEAR_MAP = {
   'freshman': 1, '1st year': 1, 'first year': 1, 'first-year': 1,
   'sophomore': 2, '2nd year': 2, 'second year': 2,
@@ -341,6 +365,8 @@ async function processApplications(filePath) {
       .on('end', async () => {
         try {
           let processed = 0;
+          // Collect trigger values per student across all their applications
+          const studentTriggers = {};
 
           for (const record of records) {
             if (!record.student_id) continue;
@@ -372,7 +398,13 @@ async function processApplications(filePath) {
               console.error('job_applications insert error:', error.message, record.student_id);
             } else {
               processed++;
+              if (!studentTriggers[record.student_id]) studentTriggers[record.student_id] = new Set();
+              getApplicationTriggers(record.status).forEach(v => studentTriggers[record.student_id].add(v));
             }
+          }
+
+          for (const [sid, triggers] of Object.entries(studentTriggers)) {
+            await autoCompleteTriggeredTasks(sid, [...triggers], null);
           }
 
           resolve(processed);
@@ -407,6 +439,8 @@ async function processEvents(filePath) {
       .on('end', async () => {
         try {
           let processed = 0;
+          // Collect trigger values per student, keyed by most recent event date
+          const studentTriggers = {};
 
           for (const record of records) {
             if (!record.student_id) continue;
@@ -437,7 +471,16 @@ async function processEvents(filePath) {
               console.error('career_events insert error:', error.message, record.student_id);
             } else {
               processed++;
+              if (!studentTriggers[record.student_id]) studentTriggers[record.student_id] = { triggers: new Set(), date: null };
+              getEventTriggers(record.event_name).forEach(v => studentTriggers[record.student_id].triggers.add(v));
+              if (record.event_date && (!studentTriggers[record.student_id].date || record.event_date > studentTriggers[record.student_id].date)) {
+                studentTriggers[record.student_id].date = record.event_date;
+              }
             }
+          }
+
+          for (const [sid, { triggers, date }] of Object.entries(studentTriggers)) {
+            await autoCompleteTriggeredTasks(sid, [...triggers], date);
           }
 
           resolve(processed);
@@ -473,6 +516,8 @@ async function processAppointments(filePath) {
       .on('end', async () => {
         try {
           let processed = 0;
+          // Collect trigger values per student across all their appointments
+          const studentTriggers = {};
 
           for (const record of records) {
             if (!record.student_id) continue;
@@ -502,7 +547,16 @@ async function processAppointments(filePath) {
               console.error('interview_appointments insert error:', error.message, record.student_id);
             } else {
               processed++;
+              if (!studentTriggers[record.student_id]) studentTriggers[record.student_id] = { triggers: new Set(), date: null };
+              getAppointmentTriggers(record.topic).forEach(v => studentTriggers[record.student_id].triggers.add(v));
+              if (record.appointment_date && (!studentTriggers[record.student_id].date || record.appointment_date > studentTriggers[record.student_id].date)) {
+                studentTriggers[record.student_id].date = record.appointment_date;
+              }
             }
+          }
+
+          for (const [sid, { triggers, date }] of Object.entries(studentTriggers)) {
+            await autoCompleteTriggeredTasks(sid, [...triggers], date);
           }
 
           resolve(processed);
@@ -560,6 +614,41 @@ async function recalculateAllScores() {
     }
   } catch (error) {
     console.error('Error recalculating scores:', error);
+  }
+}
+
+// Auto-complete roadmap tasks whose trigger matches one of the given values.
+// activityDate sets completed_at so the timeline reflects the real activity date.
+async function autoCompleteTriggeredTasks(studentId, triggerValues, activityDate) {
+  try {
+    const { data: studentRow } = await supabaseAdmin
+      .from('student_career_progress')
+      .select('current_year')
+      .eq('student_id', studentId)
+      .single();
+
+    const currentYear = studentRow?.current_year;
+    if (!currentYear) return;
+
+    const { data: tasks } = await supabase
+      .from('roadmap_tasks')
+      .select('id')
+      .eq('year', currentYear)
+      .in('trigger', triggerValues);
+
+    if (!tasks?.length) return;
+
+    const completedAt = activityDate || new Date().toISOString();
+    for (const task of tasks) {
+      await supabaseAdmin
+        .from('task_completions')
+        .upsert(
+          { student_id: studentId, task_key: `task_${task.id}`, completed: true, completed_at: completedAt },
+          { onConflict: 'student_id,task_key' }
+        );
+    }
+  } catch (err) {
+    console.error('autoCompleteTriggeredTasks error:', err.message, studentId, triggerValues);
   }
 }
 
