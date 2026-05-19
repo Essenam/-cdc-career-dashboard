@@ -6,6 +6,7 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
   const [summary, setSummary] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState(null);
   const [filterRisk, setFilterRisk] = useState(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -248,6 +249,84 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
               </div>
             </div>
 
+            {/* Top Employers */}
+            {analytics.top_employers?.length > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
+                  Top Employers
+                  <span className="ml-2 font-normal text-gray-400 normal-case">by application volume</span>
+                </h3>
+                <div className="space-y-2">
+                  {analytics.top_employers.map((company) => {
+                    const maxTotal = analytics.top_employers[0].total;
+                    const pct = Math.round(company.total / maxTotal * 100);
+                    return (
+                      <button
+                        key={company.name}
+                        onClick={() => setSelectedCompany(company)}
+                        className="w-full text-left p-3 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition group"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-semibold text-gray-800 group-hover:text-blue-700">{company.name}</span>
+                          <div className="flex items-center gap-3 text-xs">
+                            {company.accepted > 0 && <span className="text-green-600 font-semibold">{company.accepted} accepted</span>}
+                            {company.interviewing > 0 && <span className="text-blue-600 font-semibold">{company.interviewing} interviewing</span>}
+                            <span className="text-gray-500">{company.total} app{company.total !== 1 ? 's' : ''} · {company.student_count} student{company.student_count !== 1 ? 's' : ''}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-1 h-2">
+                          {company.accepted > 0 && <div className="bg-green-400 rounded-full" style={{ width: `${company.accepted / company.total * pct}%` }} />}
+                          {company.interviewing > 0 && <div className="bg-blue-400 rounded-full" style={{ width: `${company.interviewing / company.total * pct}%` }} />}
+                          {company.pending > 0 && <div className="bg-yellow-300 rounded-full" style={{ width: `${company.pending / company.total * pct}%` }} />}
+                          {company.declined > 0 && <div className="bg-gray-300 rounded-full" style={{ width: `${company.declined / company.total * pct}%` }} />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                  <p className="text-xs text-gray-400 mt-1">Green = accepted · Blue = interviewing · Yellow = pending · Gray = declined. Click any employer to see students.</p>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
+      {/* Company detail modal */}
+      {selectedCompany && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" onClick={() => setSelectedCompany(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{selectedCompany.name}</h2>
+                <p className="text-sm text-gray-500">{selectedCompany.total} application{selectedCompany.total !== 1 ? 's' : ''} · {selectedCompany.student_count} student{selectedCompany.student_count !== 1 ? 's' : ''}</p>
+              </div>
+              <button onClick={() => setSelectedCompany(null)} className="text-gray-400 hover:text-gray-600 text-xl font-bold">✕</button>
+            </div>
+            <div className="overflow-y-auto p-6 space-y-3">
+              {selectedCompany.applications
+                .sort((a, b) => {
+                  const order = { accepted: 0, interviewing: 1, pending: 2, declined: 3 };
+                  return (order[a.status] ?? 4) - (order[b.status] ?? 4);
+                })
+                .map((app, i) => {
+                  const statusColor = app.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                    app.status === 'interviewing' ? 'bg-blue-100 text-blue-700' :
+                    app.status === 'declined' ? 'bg-red-100 text-red-600' :
+                    'bg-yellow-100 text-yellow-700';
+                  return (
+                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{app.student_name}</p>
+                        <p className="text-xs text-gray-500">{app.job_title || 'Position not specified'}{app.applied_date ? ` · Applied ${new Date(app.applied_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}</p>
+                      </div>
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColor}`}>
+                        {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                      </span>
+                    </div>
+                  );
+                })}
+            </div>
           </div>
         </div>
       )}

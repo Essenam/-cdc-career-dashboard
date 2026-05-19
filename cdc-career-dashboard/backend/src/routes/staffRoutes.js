@@ -127,14 +127,43 @@ router.get('/dashboard', async (req, res) => {
 // GET analytics — activity stats, engagement distribution, platform usage, insights
 router.get('/analytics', async (req, res) => {
   try {
-    const [studentsRes, apptsRes, completionsRes] = await Promise.all([
-      supabase.from('student_career_progress').select('student_id, career_events_attended, job_applications_count, engagement_score, risk_level'),
+    const [studentsRes, apptsRes, completionsRes, appsRes] = await Promise.all([
+      supabase.from('student_career_progress').select('student_id, full_name, career_events_attended, job_applications_count, engagement_score, risk_level'),
       supabase.from('interview_appointments').select('student_id'),
-      supabase.from('task_completions').select('student_id, completed').eq('completed', true)
+      supabase.from('task_completions').select('student_id, completed').eq('completed', true),
+      supabase.from('job_applications').select('student_id, company_name, job_title, status, applied_date')
     ]);
 
     const students = studentsRes.data || [];
     const appts = apptsRes.data || [];
+    const allApps = appsRes.data || [];
+
+    // Build student name lookup
+    const studentNames = {};
+    for (const s of students) studentNames[s.student_id] = s.full_name || s.student_id;
+
+    // Aggregate applications by company
+    const companyMap = {};
+    for (const app of allApps) {
+      if (!app.company_name) continue;
+      if (!companyMap[app.company_name]) {
+        companyMap[app.company_name] = { name: app.company_name, total: 0, pending: 0, interviewing: 0, accepted: 0, declined: 0, applications: [] };
+      }
+      const c = companyMap[app.company_name];
+      c.total++;
+      c[app.status || 'pending'] = (c[app.status || 'pending'] || 0) + 1;
+      c.applications.push({
+        student_id: app.student_id,
+        student_name: studentNames[app.student_id] || app.student_id,
+        job_title: app.job_title,
+        status: app.status || 'pending',
+        applied_date: app.applied_date
+      });
+    }
+    const topEmployers = Object.values(companyMap)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 15)
+      .map(c => ({ ...c, student_count: new Set(c.applications.map(a => a.student_id)).size }));
     const completions = completionsRes.data || [];
 
     const median = (arr) => {
@@ -230,6 +259,7 @@ router.get('/analytics', async (req, res) => {
       engagement_score: { avg: avg(scores), median: median(scores) },
       engagement_distribution: engagementDistribution,
       platform_usage: platformUsage,
+      top_employers: topEmployers,
       insights
     });
   } catch (err) {
