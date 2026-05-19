@@ -163,12 +163,14 @@ router.post('/upload-csv', upload.array('files'), async (req, res) => {
         count = await processStudentRoster(file.path);
       } else if (fileName.includes('applications')) {
         count = await processApplications(file.path);
+      } else if (fileName.includes('fair')) {
+        count = await processCareerFair(file.path);
       } else if (fileName.includes('events')) {
         count = await processEvents(file.path);
       } else if (fileName.includes('appointments') || fileName.includes('interview')) {
         count = await processAppointments(file.path);
       } else {
-        warnings.push(`"${file.originalname}" was skipped — filename must include "students", "roster", "applications", "events", or "appointments".`);
+        warnings.push(`"${file.originalname}" was skipped — filename must include "students", "roster", "applications", "fair", "events", or "appointments".`);
       }
 
       if (count === 0 && !warnings.some(w => w.includes(file.originalname))) {
@@ -489,6 +491,86 @@ async function processEvents(filePath) {
               getEventTriggers(record.event_name, record.event_type).forEach(v => studentTriggers[record.student_id].triggers.add(v));
               if (record.event_date && (!studentTriggers[record.student_id].date || record.event_date > studentTriggers[record.student_id].date)) {
                 studentTriggers[record.student_id].date = record.event_date;
+              }
+            }
+          }
+
+          for (const [sid, { triggers, date }] of Object.entries(studentTriggers)) {
+            await autoCompleteTriggeredTasks(sid, [...triggers], date);
+          }
+
+          resolve(processed);
+        } catch (error) {
+          reject(error);
+        }
+      })
+      .on('error', reject);
+  });
+}
+
+async function processCareerFair(filePath) {
+  return new Promise((resolve, reject) => {
+    const records = [];
+
+    const sep = detectSeparator(filePath);
+    fs.createReadStream(filePath)
+      .pipe(csv({ separator: sep }))
+      .on('data', (row) => {
+        const firstName  = row['Student Attendees First Name'] || '';
+        const lastName   = row['Student Attendees Last Name']  || '';
+        const major      = (row['Student Attendee Majors Name'] || '').split(';')[0].trim();
+        const schoolYear = (row['Student Attendee School Year (at Fair Time) Name'] || '').split(';')[0].trim();
+        records.push({
+          student_id:  row['Student Attendees Card Id'],
+          first_name:  firstName,
+          last_name:   lastName,
+          full_name:   `${firstName} ${lastName}`.trim(),
+          email:       row['Student Attendees Email - Institution'] || '',
+          major,
+          school_year: schoolYear,
+          fair_name:   row['Career Fairs Name'] || '',
+          fair_date:   row['Career Fair Dates and Times Start Date'] || '',
+        });
+      })
+      .on('end', async () => {
+        try {
+          let processed = 0;
+          const studentTriggers = {};
+
+          for (const record of records) {
+            if (!record.student_id) continue;
+
+            await ensureStudentRecord(record.student_id, {
+              full_name:   record.full_name,
+              first_name:  record.first_name,
+              last_name:   record.last_name,
+              email:       record.email,
+              major:       record.major,
+              school_year: record.school_year,
+            });
+
+            const { error } = await supabase
+              .from('career_events')
+              .insert({
+                event_id:     genId('EVT'),
+                student_id:   record.student_id,
+                event_title:  record.fair_name,
+                event_type:   'Career Fair',
+                attended_date: record.fair_date,
+                checked_in:   true,
+                is_drop_in:   false,
+                source:       'handshake'
+              });
+
+            if (error) {
+              console.error('career_fair insert error:', error.message, record.student_id);
+            } else {
+              processed++;
+              if (!studentTriggers[record.student_id]) studentTriggers[record.student_id] = { triggers: new Set(), date: null };
+              // Career fair always fires both triggers — no keyword guessing needed
+              ['event:any', 'event:career_fair'].forEach(v => studentTriggers[record.student_id].triggers.add(v));
+              if (record.fair_date && (!studentTriggers[record.student_id].date || record.fair_date > studentTriggers[record.student_id].date)) {
+                studentTriggers[record.student_id].date = record.fair_date;
               }
             }
           }
