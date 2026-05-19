@@ -121,7 +121,14 @@ router.post('/upload-csv', upload.array('files'), async (req, res) => {
     let totalRecordsProcessed = 0;
     const warnings = [];
 
-    for (const file of req.files) {
+    // Process roster files first so current_year is set before activity files run
+    const sortedFiles = [...req.files].sort((a, b) => {
+      const isRosterA = a.originalname.toLowerCase().includes('student') || a.originalname.toLowerCase().includes('roster');
+      const isRosterB = b.originalname.toLowerCase().includes('student') || b.originalname.toLowerCase().includes('roster');
+      return isRosterA ? -1 : isRosterB ? 1 : 0;
+    });
+
+    for (const file of sortedFiles) {
       const fileName = file.originalname.toLowerCase();
       let count = 0;
 
@@ -177,6 +184,7 @@ async function ensureStudentRecord(studentId, fields = {}) {
   const full_name = fields.full_name || `${first_name} ${last_name}`.trim();
 
   if (!existing) {
+    const derivedYear = deriveCurrentYear(fields.school_year || null, fields.graduation_date || null);
     const { error: insertErr } = await supabaseAdmin.from('student_career_progress').insert({
       student_id: studentId,
       full_name: full_name || studentId,
@@ -184,7 +192,7 @@ async function ensureStudentRecord(studentId, fields = {}) {
       last_name,
       email: fields.email || null,
       major: fields.major || '',
-      current_year: fields.current_year || null,
+      current_year: fields.current_year || derivedYear || null,
       graduation_date: fields.graduation_date || null,
       engagement_score: 0,
       career_events_attended: 0,
@@ -272,7 +280,7 @@ async function processStudentRoster(filePath) {
               if (!error) processed++;
               else console.error('roster update error:', error.message, r.studentId);
             } else {
-              const { error } = await supabase
+              const { error } = await supabaseAdmin
                 .from('student_career_progress')
                 .insert({
                   student_id: r.studentId,
@@ -567,7 +575,6 @@ async function updateEngagementScore(studentId) {
     const appCount   = appsRes.data?.length || 0;
     const apptCount  = appointmentsRes.data?.length || 0;
 
-    // Weighted activity score — events worth most (showing up), then applications, then appointments
     const score = (eventCount * 20) + (appCount * 15) + (apptCount * 10);
 
     const riskLevel = score >= 67 ? 'engaged'

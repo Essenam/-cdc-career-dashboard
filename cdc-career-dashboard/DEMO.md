@@ -155,16 +155,19 @@ Point to Manage Milestones:
 | Fact | Value |
 |---|---|
 | Total students | 16 |
-| Need Outreach | 9 |
-| On Track | 6 |
-| Most active student | Mei Liu (score 200) |
-| Least active | Caleb Robinson (score 10) |
+| Score = | milestone % for current year (0–100) |
+| Need Outreach | 0% — no activity at all |
+| Developing | 1–19% — some Handshake activity |
+| Engaged | 20%+ — events + apps + appointments all present |
+| Caleb Robinson | 0% — 0 events, 0 apps — Need Outreach |
+| Marcus Johnson | active student — Developing or Engaged after resync |
 | Total applications in system | 38 |
 | Total events | 17 |
 | Total CDC appointments | 9 |
 | Active roadmap tasks | 58 across 4 years |
 | Student to demo as | Marcus Johnson (STU001) |
 | Staff password | cdc2025 |
+| **Run after any upload** | Resync from Admin panel to recalculate scores |
 
 ---
 

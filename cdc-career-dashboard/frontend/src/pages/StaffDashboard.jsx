@@ -120,7 +120,7 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
           <div className="flex items-center justify-between mb-6">
             <p className="text-xs text-gray-400">
               Activity score = events (×20) + applications (×15) + CDC appointments (×10) from Handshake imports.
-              Need Outreach &lt; 33 · Developing 33–66 · On Track 67+
+              Need Outreach &lt; 33 · Developing 33–66 · Engaged 67+
             </p>
             <button
               onClick={handleToggleAnalytics}
@@ -180,8 +180,8 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
               {/* Engagement Distribution */}
               <div>
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
-                  Engagement Distribution
-                  <span className="ml-2 font-normal text-gray-400 normal-case">Avg {analytics.engagement_score.avg} · Median {analytics.engagement_score.median}</span>
+                  Milestone Completion
+                  <span className="ml-2 font-normal text-gray-400 normal-case">Avg {analytics.engagement_score.avg}% · Median {analytics.engagement_score.median}%</span>
                 </h3>
                 <div className="space-y-2">
                   {analytics.engagement_distribution.map(({ label, range, count }) => {
@@ -313,9 +313,7 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
                 <tbody>
                   {pageStudents.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="border p-6 text-center text-gray-500">
-                        No students match your search.
-                      </td>
+                      <td colSpan={8} className="border p-6 text-center text-gray-500">No students match your search.</td>
                     </tr>
                   )}
                   {pageStudents.map((student) => (
