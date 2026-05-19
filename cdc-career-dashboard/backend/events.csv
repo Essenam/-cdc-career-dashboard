@@ -1,18 +1,18 @@
-Card Id,First Name,Last Name,Student Name,Email,Major,Start Date Date,Content,Checked In? (Yes / No),Staff Name
-STU001,Marcus,Johnson,Marcus Johnson,marcus.johnson@stthomas.edu,Business Administration,2026-02-20,Spring Career Fair,Yes,CDC Staff
-STU001,Marcus,Johnson,Marcus Johnson,marcus.johnson@stthomas.edu,Business Administration,2026-03-05,Industry Leaders Panel,Yes,CDC Staff
-STU001,Marcus,Johnson,Marcus Johnson,marcus.johnson@stthomas.edu,Business Administration,2026-03-25,Alumni Networking Night,Yes,CDC Staff
-STU001,Marcus,Johnson,Marcus Johnson,marcus.johnson@stthomas.edu,Business Administration,2026-04-08,Resume Workshop,Yes,CDC Staff
-STU002,Priya,Patel,Priya Patel,priya.patel@stthomas.edu,Computer Science,2026-02-20,Spring Career Fair,Yes,CDC Staff
-STU002,Priya,Patel,Priya Patel,priya.patel@stthomas.edu,Computer Science,2026-03-10,Tech Career Panel,Yes,CDC Staff
-STU002,Priya,Patel,Priya Patel,priya.patel@stthomas.edu,Computer Science,2026-04-02,Employer Info Session - Microsoft,Yes,CDC Staff
-STU003,Aisha,Williams,Aisha Williams,aisha.williams@stthomas.edu,Marketing,2026-02-20,Spring Career Fair,Yes,CDC Staff
-STU003,Aisha,Williams,Aisha Williams,aisha.williams@stthomas.edu,Marketing,2026-03-18,Marketing Career Panel,Yes,CDC Staff
-STU004,Jordan,Chen,Jordan Chen,jordan.chen@stthomas.edu,Finance,2026-03-12,Finance Networking Event,Yes,CDC Staff
-STU005,Sofia,Martinez,Sofia Martinez,sofia.martinez@stthomas.edu,Communication,2026-02-20,Spring Career Fair,Yes,CDC Staff
-STU007,Mei,Liu,Mei Liu,mei.liu@stthomas.edu,Data Science,2026-02-20,Spring Career Fair,Yes,CDC Staff
-STU007,Mei,Liu,Mei Liu,mei.liu@stthomas.edu,Data Science,2026-02-28,Data Science Symposium,Yes,CDC Staff
-STU007,Mei,Liu,Mei Liu,mei.liu@stthomas.edu,Data Science,2026-03-15,Employer Info Session - Best Buy,Yes,CDC Staff
-STU007,Mei,Liu,Mei Liu,mei.liu@stthomas.edu,Data Science,2026-04-01,LinkedIn Workshop,Yes,CDC Staff
-STU007,Mei,Liu,Mei Liu,mei.liu@stthomas.edu,Data Science,2026-04-10,Networking Dinner,Yes,CDC Staff
-STU009,Nadia,Okafor,Nadia Okafor,nadia.okafor@stthomas.edu,Biology,2026-02-20,Spring Career Fair,Yes,CDC Staff
+Student Attendees Card Id	Student Attendees First Name	Student Attendees Last Name	Student Attendees Email - Institution	Events Name	Events Start Date Date	Student Attendee Majors Name	Student Attendee Colleges Name	Event Type Name	Attendees Checked In? (Yes / No)	Student Attendee School Years Name
+STU001	Marcus	Johnson	marcus.johnson@stthomas.edu	Spring Career Fair	2026-02-20	Business Administration	Opus College of Business	Career Fair	Yes	Senior
+STU001	Marcus	Johnson	marcus.johnson@stthomas.edu	Industry Leaders Panel	2026-03-05	Business Administration	Opus College of Business	Info Session	Yes	Senior
+STU001	Marcus	Johnson	marcus.johnson@stthomas.edu	Alumni Networking Night	2026-03-25	Business Administration	Opus College of Business	Networking	Yes	Senior
+STU001	Marcus	Johnson	marcus.johnson@stthomas.edu	Resume Workshop	2026-04-08	Business Administration	Opus College of Business	Workshop	Yes	Senior
+STU002	Priya	Patel	priya.patel@stthomas.edu	Spring Career Fair	2026-02-20	Computer Science	School of Engineering	Career Fair	Yes	Senior
+STU002	Priya	Patel	priya.patel@stthomas.edu	Tech Career Panel	2026-03-10	Computer Science	School of Engineering	Info Session	Yes	Senior
+STU002	Priya	Patel	priya.patel@stthomas.edu	Employer Info Session - Microsoft	2026-04-02	Computer Science	School of Engineering	Employer On-site	Yes	Senior
+STU003	Aisha	Williams	aisha.williams@stthomas.edu	Spring Career Fair	2026-02-20	Marketing	Opus College of Business	Career Fair	Yes	Junior
+STU003	Aisha	Williams	aisha.williams@stthomas.edu	Marketing Career Panel	2026-03-18	Marketing	Opus College of Business	Info Session	Yes	Junior
+STU004	Jordan	Chen	jordan.chen@stthomas.edu	Finance Networking Event	2026-03-12	Finance	Opus College of Business	Networking	Yes	Junior
+STU005	Sofia	Martinez	sofia.martinez@stthomas.edu	Spring Career Fair	2026-02-20	Communication	College of Arts and Sciences	Career Fair	No	Sophomore
+STU007	Mei	Liu	mei.liu@stthomas.edu	Spring Career Fair	2026-02-20	Data Science	School of Engineering	Career Fair	Yes	Senior
+STU007	Mei	Liu	mei.liu@stthomas.edu	Data Science Symposium	2026-02-28	Data Science	School of Engineering	Info Session	Yes	Senior
+STU007	Mei	Liu	mei.liu@stthomas.edu	Employer Info Session - Best Buy	2026-03-15	Data Science	School of Engineering	Employer On-site	Yes	Senior
+STU007	Mei	Liu	mei.liu@stthomas.edu	LinkedIn Workshop	2026-04-01	Data Science	School of Engineering	Workshop	Yes	Senior
+STU007	Mei	Liu	mei.liu@stthomas.edu	Salary Negotiation Workshop	2026-04-10	Data Science	School of Engineering	Workshop	Yes	Senior
+STU009	Nadia	Okafor	nadia.okafor@stthomas.edu	Spring Career Fair	2026-02-20	Biology	College of Arts and Sciences	Career Fair	Yes	Junior
