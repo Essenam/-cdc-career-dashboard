@@ -40,7 +40,7 @@ Point to the four cards:
 - **16 students** total
 - **9 Need Outreach** — little to no recorded activity
 - **1 Developing** — some activity, needs encouragement
-- **6 On Track** — actively engaged across platforms
+- **6 Engaged** — actively using Handshake and CDC platforms
 
 > "These numbers come directly from Handshake exports — events attended, applications submitted, advising appointments. No manual data entry."
 
