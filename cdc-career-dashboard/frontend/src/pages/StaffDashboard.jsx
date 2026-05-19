@@ -41,6 +41,7 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
   useEffect(() => {
     fetchData();
     if (refreshRef) refreshRef.current = fetchData;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFilterRisk = async (level) => {
