@@ -7,11 +7,13 @@ const { supabase, supabaseAdmin } = require('../config/db');
 const genId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 // Determine which trigger values apply based on activity content
-function getEventTriggers(eventTitle) {
-  const t = (eventTitle || '').toLowerCase();
+function getEventTriggers(eventTitle, eventType) {
+  // Check both the event name and the structured Event Type Name field
+  const title = (eventTitle || '').toLowerCase();
+  const type  = (eventType  || '').toLowerCase();
   const values = ['event:any'];
-  if (t.includes('fair')) values.push('event:career_fair');
-  if (t.includes('negotiat') || t.includes('salary')) values.push('event:negotiation');
+  if (title.includes('fair') || type.includes('fair') || type.includes('career fair')) values.push('event:career_fair');
+  if (title.includes('negotiat') || title.includes('salary')) values.push('event:negotiation');
   return values;
 }
 
@@ -430,16 +432,22 @@ async function processEvents(filePath) {
     fs.createReadStream(filePath)
       .pipe(csv({ separator: sep }))
       .on('data', (row) => {
+        const firstName = row['Student Attendees First Name'] || row['First Name'] || '';
+        const lastName  = row['Student Attendees Last Name']  || row['Last Name']  || '';
+        const major     = (row['Student Attendee Majors Name'] || row['Major'] || '').split(';')[0].trim();
+        const schoolYear = (row['Student Attendee School Years Name'] || '').split(';')[0].trim();
         records.push({
-          student_id: row['Card Id'],
-          full_name: row['Student Name'] || '',
-          first_name: row['First Name'] || '',
-          last_name: row['Last Name'] || '',
-          email: row['Email'] || '',
-          major: row['Major'] || '',
-          event_name: row['Content'],
-          event_date: row['Start Date Date'] || row['Start Date Time'],
-          staff_name: row['Staff Name']
+          student_id:  row['Student Attendees Card Id'] || row['Card Id'],
+          first_name:  firstName,
+          last_name:   lastName,
+          full_name:   `${firstName} ${lastName}`.trim(),
+          email:       row['Student Attendees Email - Institution'] || row['Email'] || '',
+          major,
+          school_year: schoolYear,
+          event_name:  row['Events Name'] || row['Content'],
+          event_type:  row['Event Type Name'] || '',
+          event_date:  row['Events Start Date Date'] || row['Start Date Date'] || row['Start Date Time'],
+          checked_in:  (row['Attendees Checked In? (Yes / No)'] || '').toLowerCase() === 'yes',
         });
       })
       .on('end', async () => {
@@ -452,25 +460,25 @@ async function processEvents(filePath) {
             if (!record.student_id) continue;
 
             await ensureStudentRecord(record.student_id, {
-              full_name: record.full_name,
-              first_name: record.first_name,
-              last_name: record.last_name,
-              email: record.email,
-              major: record.major
+              full_name:   record.full_name,
+              first_name:  record.first_name,
+              last_name:   record.last_name,
+              email:       record.email,
+              major:       record.major,
+              school_year: record.school_year,
             });
 
             const { error } = await supabase
               .from('career_events')
               .insert({
-                event_id: genId('EVT'),
-                student_id: record.student_id,
-                event_title: record.event_name,
-                event_type: 'career_event',
+                event_id:     genId('EVT'),
+                student_id:   record.student_id,
+                event_title:  record.event_name,
+                event_type:   record.event_type || 'career_event',
                 attended_date: record.event_date,
-                staff_name: record.staff_name,
-                checked_in: true,
-                is_drop_in: false,
-                source: 'handshake'
+                checked_in:   record.checked_in,
+                is_drop_in:   false,
+                source:       'handshake'
               });
 
             if (error) {
@@ -478,7 +486,7 @@ async function processEvents(filePath) {
             } else {
               processed++;
               if (!studentTriggers[record.student_id]) studentTriggers[record.student_id] = { triggers: new Set(), date: null };
-              getEventTriggers(record.event_name).forEach(v => studentTriggers[record.student_id].triggers.add(v));
+              getEventTriggers(record.event_name, record.event_type).forEach(v => studentTriggers[record.student_id].triggers.add(v));
               if (record.event_date && (!studentTriggers[record.student_id].date || record.event_date > studentTriggers[record.student_id].date)) {
                 studentTriggers[record.student_id].date = record.event_date;
               }
