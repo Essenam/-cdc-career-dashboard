@@ -570,7 +570,7 @@ async function updateEngagementScore(studentId) {
     // Weighted activity score — events worth most (showing up), then applications, then appointments
     const score = (eventCount * 20) + (appCount * 15) + (apptCount * 10);
 
-    const riskLevel = score >= 67 ? 'on track'
+    const riskLevel = score >= 67 ? 'engaged'
       : score >= 33 ? 'developing'
       : 'need outreach';
 

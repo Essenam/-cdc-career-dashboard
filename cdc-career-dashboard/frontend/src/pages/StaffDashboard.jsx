@@ -61,9 +61,10 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
 
   const getRiskColor = (level) => {
     const l = level?.toLowerCase();
-    if (l === 'need outreach' || l === 'high') return 'bg-red-100 text-red-800';
-    if (l === 'developing' || l === 'medium') return 'bg-yellow-100 text-yellow-800';
-    return 'bg-green-100 text-green-800';
+    if (l === 'need outreach') return 'bg-red-100 text-red-800';
+    if (l === 'developing')   return 'bg-yellow-100 text-yellow-800';
+    if (l === 'engaged')      return 'bg-green-100 text-green-800';
+    return 'bg-gray-100 text-gray-600';
   };
 
   const filteredStudents = allStudents.filter((s) => {
@@ -111,9 +112,9 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
               <p className="text-xs text-yellow-500 mt-1">Some activity, needs encouragement</p>
             </div>
             <div className="bg-green-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600 font-medium">On Track</p>
+              <p className="text-sm text-gray-600 font-medium">Engaged</p>
               <p className="text-3xl font-bold text-green-700">{summary.lowRiskCount}</p>
-              <p className="text-xs text-green-500 mt-1">Actively engaged across platforms</p>
+              <p className="text-xs text-green-500 mt-1">Active on Handshake and CDC platforms</p>
             </div>
           </div>
           <div className="flex items-center justify-between mb-6">
@@ -185,7 +186,7 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
                 <div className="space-y-2">
                   {analytics.engagement_distribution.map(({ label, range, count }) => {
                     const pct = analytics.total_students > 0 ? Math.round(count / analytics.total_students * 100) : 0;
-                    const barColor = label === 'Need Outreach' ? 'bg-red-400' : label === 'Developing' ? 'bg-yellow-400' : 'bg-green-500';
+                    const barColor = label === 'Need Outreach' ? 'bg-red-400' : label === 'Developing' ? 'bg-yellow-400' : label === 'Engaged' ? 'bg-green-500' : 'bg-gray-300';
                     return (
                       <div key={label} className="flex items-center gap-3">
                         <div className="w-24 text-right">
@@ -273,10 +274,10 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
             Developing
           </button>
           <button
-            onClick={() => handleFilterRisk('on track')}
-            className={`px-4 py-2 rounded ${filterRisk === 'on track' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
+            onClick={() => handleFilterRisk('engaged')}
+            className={`px-4 py-2 rounded ${filterRisk === 'engaged' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
           >
-            On Track
+            Engaged
           </button>
         </div>
 

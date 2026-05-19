@@ -105,9 +105,9 @@ router.get('/dashboard', async (req, res) => {
 
     const totalStudents = allStudents?.length || 0;
     const scores = allStudents?.map(s => s.engagement_score || 0) || [];
-    const highRiskCount = scores.filter(s => s < 33).length;
-    const mediumRiskCount = scores.filter(s => s >= 33 && s < 67).length;
-    const lowRiskCount = scores.filter(s => s >= 67).length;
+    const highRiskCount   = allStudents?.filter(s => s.risk_level === 'need outreach').length || 0;
+    const mediumRiskCount = allStudents?.filter(s => s.risk_level === 'developing').length || 0;
+    const lowRiskCount    = allStudents?.filter(s => s.risk_level === 'engaged').length || 0;
     const avgEngagement = allStudents?.length > 0 
       ? Math.round(allStudents.reduce((sum, s) => sum + s.engagement_score, 0) / allStudents.length)
       : 0;
@@ -168,7 +168,7 @@ router.get('/analytics', async (req, res) => {
     const engagementDistribution = [
       { label: 'Need Outreach', range: '0–32',  count: students.filter(s => (s.engagement_score || 0) < 33).length },
       { label: 'Developing',    range: '33–66', count: students.filter(s => (s.engagement_score || 0) >= 33 && (s.engagement_score || 0) < 67).length },
-      { label: 'On Track',      range: '67+',   count: students.filter(s => (s.engagement_score || 0) >= 67).length },
+      { label: 'Engaged',       range: '67+',   count: students.filter(s => (s.engagement_score || 0) >= 67).length },
     ];
 
     const platformUsage = [
@@ -200,7 +200,7 @@ router.get('/analytics', async (req, res) => {
     const highEngagement = students.filter(s => s.engagement_score > 150).length;
     if (highEngagement > 0)
       insights.push({ type: 'success', icon: '⭐',
-        message: `${highEngagement} student${highEngagement > 1 ? 's are' : ' is'} highly engaged (score 150+).`,
+        message: `${highEngagement} student${highEngagement > 1 ? 's are' : ' is'} highly active on Handshake (score 150+).`,
         action: 'Consider these students as peer mentors or CDC student ambassadors.' });
 
     if (studentsWithCompletions === 0)
