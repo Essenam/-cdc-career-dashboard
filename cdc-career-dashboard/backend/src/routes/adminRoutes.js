@@ -354,22 +354,22 @@ async function processApplications(filePath) {
       .pipe(csv({ separator: sep }))
       .on('data', (row) => {
         const first_name = row['Applicant (student) First Name'] || row['First Name'] || '';
-        const last_name = row['Applicant (student) Last Name'] || row['Last Name'] || '';
+        const last_name  = row['Applicant (student) Last Name']  || row['Last Name']  || '';
         records.push({
-          student_id: row['Applicant (student) Card Id'] || row['Card Id'],
+          student_id:       row['Applicant (student) Card Id'] || row['Card Id'],
           first_name,
           last_name,
-          full_name: `${first_name} ${last_name}`.trim(),
-          email: row['Applicant (student) Email'] || row['Email'] || '',
-          major: row['Major'] || '',
-          graduation_date: row['Graduation Date'] || null,
-          employer_name: row['Employer Name'],
-          job_title: row['Job Title'],
+          full_name:        `${first_name} ${last_name}`.trim(),
+          email:            row['Applicant (student) Email - Institution'] || row['Applicant (student) Email'] || row['Email'] || '',
+          major:            row['Major'] || '',
+          graduation_date:  row['Graduation Date'] || null,
+          employer_name:    row['Employer Name'],
+          job_title:        row['Job Title'],
           application_type: row['Applications Application Type'] || null,
-          application_date: row['Applications Created At Date'],
-          status: row['Applications Status'],
-          fully_qualified: (row['Applications Fully Qualified? (Yes / No)'] || '').toLowerCase() === 'yes',
-          external_apply: (row['Job External Apply? (Yes / No)'] || '').toLowerCase() === 'yes'
+          application_date: row['Applications Created At Date'] || null,
+          status:           row['Applications Status'],
+          fully_qualified:  (row['Applications Fully Qualified? (Yes / No)'] || '').toLowerCase() === 'yes',
+          external_apply:   (row['Job External Apply? (Yes / No)'] || '').toLowerCase() === 'yes'
         });
       })
       .on('end', async () => {
