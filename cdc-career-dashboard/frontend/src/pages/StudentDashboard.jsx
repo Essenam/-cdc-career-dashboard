@@ -101,7 +101,7 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
         const completions = {};
         const proofs = {};
         for (const row of res.data) {
-          completions[row.task_key] = row.completed;
+          completions[row.task_key] = { completed: row.completed, source: row.source || null };
           if (row.proof_name) {
             proofs[row.task_key] = {
               name: row.proof_name,
@@ -159,13 +159,19 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
 
   const taskKey = (taskId) => `task_${taskId}`;
 
-  const isTaskCompleted = (taskId) => !!manualCompletions[taskKey(taskId)];
+  const isTaskCompleted = (taskId) => {
+    const c = manualCompletions[taskKey(taskId)];
+    return c === true || c?.completed === true;
+  };
 
   const toggleTaskCompletion = (task) => {
     const key = taskKey(task.id);
     const nowChecked = !isTaskCompleted(task.id);
 
-    const updatedTasks = { ...manualCompletions, [key]: nowChecked };
+    const updatedTasks = {
+      ...manualCompletions,
+      [key]: nowChecked ? { completed: true, source: 'Student self-reported' } : { completed: false, source: null }
+    };
     setManualCompletions(updatedTasks);
     try { localStorage.setItem(`cdc_tasks_${student?.student_id}`, JSON.stringify(updatedTasks)); } catch {}
 
@@ -573,9 +579,16 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
                                       className="w-full p-4 flex gap-4 text-left hover:bg-purple-100 transition"
                                     >
                                       <span className="text-xl flex-shrink-0 mt-0.5">{completed ? '✅' : '⭕'}</span>
-                                      <p className={`text-sm leading-snug flex-1 ${completed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                                        {task.task_text}
-                                      </p>
+                                      <div className="flex-1">
+                                        <p className={`text-sm leading-snug ${completed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                                          {task.task_text}
+                                        </p>
+                                        {completed && manualCompletions[key]?.source && (
+                                          <p className="text-xs text-purple-500 mt-1 font-medium no-underline" style={{ textDecoration: 'none' }}>
+                                            {manualCompletions[key].source}
+                                          </p>
+                                        )}
+                                      </div>
                                     </button>
                                     {completed && (
                                       <div className="px-4 py-2 bg-white border-t border-purple-100 flex items-center gap-3 flex-wrap">

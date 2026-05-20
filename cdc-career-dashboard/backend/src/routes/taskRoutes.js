@@ -7,7 +7,7 @@ router.get('/:studentId', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('task_completions')
-      .select('task_key, completed, proof_name, proof_type, proof_size, proof_data')
+      .select('task_key, completed, proof_name, proof_type, proof_size, proof_data, source')
       .eq('student_id', req.params.studentId);
 
     if (error) return res.status(500).json({ error: error.message });
@@ -28,8 +28,9 @@ router.put('/:studentId/:taskKey', async (req, res) => {
       .upsert(
         {
           student_id: studentId,
-          task_key: taskKey,
-          completed: completed ?? true,
+          task_key:   taskKey,
+          completed:  completed ?? true,
+          source:     'Student self-reported',
           proof_name: proof_name || null,
           proof_type: proof_type || null,
           proof_size: proof_size || null,

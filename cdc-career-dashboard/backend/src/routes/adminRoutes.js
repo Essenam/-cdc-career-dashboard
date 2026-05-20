@@ -6,6 +6,13 @@ const { supabase, supabaseAdmin } = require('../config/db');
 
 const genId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+function fmtDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch { return dateStr; }
+}
+
 // Determine which trigger values apply based on activity content
 function getEventTriggers(eventTitle, eventType) {
   // Check both the event name and the structured Event Type Name field
@@ -350,7 +357,7 @@ async function processStudentRoster(filePath) {
 
             // Resume uploaded to Handshake → infer student has created/updated their resume
             if (r.hasResume) {
-              await autoCompleteTriggeredTasks(r.studentId, ['document:resume'], null);
+              await autoCompleteTriggeredTasks(r.studentId, ['document:resume'], null, 'Auto — Resume uploaded to Handshake');
             }
           }
 
@@ -432,7 +439,7 @@ async function processApplications(filePath) {
           }
 
           for (const [sid, triggers] of Object.entries(studentTriggers)) {
-            await autoCompleteTriggeredTasks(sid, [...triggers], null);
+            await autoCompleteTriggeredTasks(sid, [...triggers], null, 'Auto — Job applications on Handshake');
           }
 
           resolve(processed);
@@ -505,16 +512,17 @@ async function processEvents(filePath) {
               console.error('career_events insert error:', error.message, record.student_id);
             } else {
               processed++;
-              if (!studentTriggers[record.student_id]) studentTriggers[record.student_id] = { triggers: new Set(), date: null };
+              if (!studentTriggers[record.student_id]) studentTriggers[record.student_id] = { triggers: new Set(), date: null, label: null };
               getEventTriggers(record.event_name, record.event_type).forEach(v => studentTriggers[record.student_id].triggers.add(v));
               if (record.event_date && (!studentTriggers[record.student_id].date || record.event_date > studentTriggers[record.student_id].date)) {
                 studentTriggers[record.student_id].date = record.event_date;
+                studentTriggers[record.student_id].label = `Auto — ${record.event_name || record.event_type} (${fmtDate(record.event_date)})`;
               }
             }
           }
 
-          for (const [sid, { triggers, date }] of Object.entries(studentTriggers)) {
-            await autoCompleteTriggeredTasks(sid, [...triggers], date);
+          for (const [sid, { triggers, date, label }] of Object.entries(studentTriggers)) {
+            await autoCompleteTriggeredTasks(sid, [...triggers], date, label);
           }
 
           resolve(processed);
@@ -584,11 +592,11 @@ async function processCareerFair(filePath) {
               console.error('career_fair insert error:', error.message, record.student_id);
             } else {
               processed++;
-              if (!studentTriggers[record.student_id]) studentTriggers[record.student_id] = { triggers: new Set(), date: null };
-              // Career fair always fires both triggers — no keyword guessing needed
+              if (!studentTriggers[record.student_id]) studentTriggers[record.student_id] = { triggers: new Set(), date: null, label: null };
               ['event:any', 'event:career_fair'].forEach(v => studentTriggers[record.student_id].triggers.add(v));
               if (record.fair_date && (!studentTriggers[record.student_id].date || record.fair_date > studentTriggers[record.student_id].date)) {
                 studentTriggers[record.student_id].date = record.fair_date;
+                studentTriggers[record.student_id].label = `Auto — ${record.fair_name} (${fmtDate(record.fair_date)})`;
               }
             }
           }
@@ -674,10 +682,11 @@ async function processAppointments(filePath) {
               console.error('interview_appointments insert error:', error.message, record.student_id);
             } else {
               processed++;
-              if (!studentTriggers[record.student_id]) studentTriggers[record.student_id] = { triggers: new Set(), date: null };
+              if (!studentTriggers[record.student_id]) studentTriggers[record.student_id] = { triggers: new Set(), date: null, label: null };
               getAppointmentTriggers(record.topic).forEach(v => studentTriggers[record.student_id].triggers.add(v));
               if (record.appointment_date && (!studentTriggers[record.student_id].date || record.appointment_date > studentTriggers[record.student_id].date)) {
                 studentTriggers[record.student_id].date = record.appointment_date;
+                studentTriggers[record.student_id].label = `Auto — ${record.topic} appointment (${fmtDate(record.appointment_date)})`;
               }
             }
           }
@@ -734,23 +743,31 @@ async function recalculateAllScores() {
       }
     }
 
-    // Build per-student trigger sets from all existing activity
-    const triggerMap = {};
-    const addTriggers = (studentId, values) => {
-      if (!studentId) return;
-      if (!triggerMap[studentId]) triggerMap[studentId] = new Set();
-      values.forEach(v => triggerMap[studentId].add(v));
-    };
-
-    for (const e of eventsRes.data  || []) addTriggers(e.student_id, getEventTriggers(e.event_title, e.event_type));
-    for (const a of appsRes.data    || []) addTriggers(a.student_id, getApplicationTriggers(a.status));
-    for (const a of apptsRes.data   || []) addTriggers(a.student_id, getAppointmentTriggers(a.company_name));
+    // Build per-student trigger sets, grouped by source type for labelling
+    const eventTriggers = {}, appTriggers = {}, apptTriggers = {};
+    for (const e of eventsRes.data || []) {
+      if (!e.student_id) continue;
+      if (!eventTriggers[e.student_id]) eventTriggers[e.student_id] = new Set();
+      getEventTriggers(e.event_title, e.event_type).forEach(v => eventTriggers[e.student_id].add(v));
+    }
+    for (const a of appsRes.data || []) {
+      if (!a.student_id) continue;
+      if (!appTriggers[a.student_id]) appTriggers[a.student_id] = new Set();
+      getApplicationTriggers(a.status).forEach(v => appTriggers[a.student_id].add(v));
+    }
+    for (const a of apptsRes.data || []) {
+      if (!a.student_id) continue;
+      if (!apptTriggers[a.student_id]) apptTriggers[a.student_id] = new Set();
+      getAppointmentTriggers(a.company_name).forEach(v => apptTriggers[a.student_id].add(v));
+    }
 
     // Fire triggers retroactively, then recalculate scores
     const allIds = new Set([...existingIds, ...allActivityIds]);
     for (const id of allIds) {
       if (!id) continue;
-      if (triggerMap[id]?.size > 0) await autoCompleteTriggeredTasks(id, [...triggerMap[id]], null);
+      if (eventTriggers[id]?.size > 0) await autoCompleteTriggeredTasks(id, [...eventTriggers[id]], null, 'Auto — Career events on Handshake');
+      if (appTriggers[id]?.size   > 0) await autoCompleteTriggeredTasks(id, [...appTriggers[id]],   null, 'Auto — Job applications on Handshake');
+      if (apptTriggers[id]?.size  > 0) await autoCompleteTriggeredTasks(id, [...apptTriggers[id]],  null, 'Auto — CDC advising appointments');
       await updateEngagementScore(id);
     }
   } catch (error) {
@@ -760,39 +777,41 @@ async function recalculateAllScores() {
 
 // Auto-complete roadmap tasks whose trigger matches one of the given values.
 // activityDate sets completed_at so the timeline reflects the real activity date.
-async function autoCompleteTriggeredTasks(studentId, triggerValues, activityDate) {
+async function autoCompleteTriggeredTasks(studentId, triggerValues, activityDate, sourceLabel) {
   try {
-    const { data: studentRow, error: yearErr } = await supabaseAdmin
+    const { data: studentRow } = await supabaseAdmin
       .from('student_career_progress')
       .select('current_year')
       .eq('student_id', studentId)
       .single();
 
     const currentYear = studentRow?.current_year;
-    console.log(`[trigger] ${studentId} year=${currentYear} triggers=[${triggerValues}]`);
-    if (yearErr) console.log(`[trigger] year fetch error:`, yearErr.message);
-    if (!currentYear) { console.log(`[trigger] skipped — no current_year`); return; }
+    if (!currentYear) return;
 
-    const { data: tasks, error: tasksErr } = await supabase
+    const { data: tasks } = await supabase
       .from('roadmap_tasks')
-      .select('id, task_text')
+      .select('id')
       .eq('year', currentYear)
       .in('trigger', triggerValues);
 
-    if (tasksErr) console.log(`[trigger] tasks fetch error:`, tasksErr.message);
-    console.log(`[trigger] ${studentId} matched ${tasks?.length || 0} tasks`);
     if (!tasks?.length) return;
 
-    const completedAt = activityDate || new Date().toISOString();
+    const now = new Date().toISOString();
     for (const task of tasks) {
-      console.log(`[trigger] completing: ${studentId} → task_${task.id} (${task.task_text?.slice(0, 50)})`);
-      const { error: upsertErr } = await supabaseAdmin
+      // ignoreDuplicates: true preserves manual completions — auto never overwrites student self-report
+      const { error } = await supabaseAdmin
         .from('task_completions')
         .upsert(
-          { student_id: studentId, task_key: `task_${task.id}`, completed: true, updated_at: completedAt },
-          { onConflict: 'student_id,task_key' }
+          {
+            student_id: studentId,
+            task_key:   `task_${task.id}`,
+            completed:  true,
+            source:     sourceLabel || 'Auto — imported from Handshake',
+            updated_at: now
+          },
+          { onConflict: 'student_id,task_key', ignoreDuplicates: true }
         );
-      if (upsertErr) console.log(`[trigger] upsert error:`, upsertErr.message);
+      if (error) console.error('autoCompleteTriggeredTasks upsert error:', error.message);
     }
   } catch (err) {
     console.error('autoCompleteTriggeredTasks error:', err.message, studentId, triggerValues);
