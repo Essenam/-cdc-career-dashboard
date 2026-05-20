@@ -789,7 +789,7 @@ async function autoCompleteTriggeredTasks(studentId, triggerValues, activityDate
       const { error: upsertErr } = await supabaseAdmin
         .from('task_completions')
         .upsert(
-          { student_id: studentId, task_key: `task_${task.id}`, completed: true, completed_at: completedAt },
+          { student_id: studentId, task_key: `task_${task.id}`, completed: true, updated_at: completedAt },
           { onConflict: 'student_id,task_key' }
         );
       if (upsertErr) console.log(`[trigger] upsert error:`, upsertErr.message);
