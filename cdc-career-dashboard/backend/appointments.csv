@@ -1,10 +1,10 @@
 Student Card Id	Student First Name	Student Last Name	Appointments Start Date Date	Student College (at Appt. Time) Name	Staff Member First Name	Staff Member Last Name	Student Majors (at Appt. Time) Name List	Student School Year (at Appt. Time) Name List	Appointment Types Name List	Appointments Description
-STU001	Marcus	Johnson	2026-03-10	Opus College of Business	Sarah	Mitchell	Business Administration	Senior	Mock Interview	Practiced behavioral questions for upcoming UnitedHealth interview
-STU001	Marcus	Johnson	2026-04-15	Opus College of Business	Sarah	Mitchell	Business Administration	Senior	Career Planning	Discussed offer evaluation from Target Corporation
-STU002	Priya	Patel	2026-02-18	School of Engineering	David	Park	Computer Science	Senior	Resume Review	Updated technical skills section for software engineering roles
-STU002	Priya	Patel	2026-03-22	School of Engineering	David	Park	Computer Science	Senior	Mock Interview	Interview prep for Microsoft final round
-STU003	Aisha	Williams	2026-03-20	Opus College of Business	Sarah	Mitchell	Marketing	Junior	Resume Review	Strengthened marketing internship experience section
-STU004	Jordan	Chen	2026-03-28	Opus College of Business	David	Park	Finance	Junior	Career Planning	Prep for Wells Fargo interview; discussed finance career paths
-STU007	Mei	Liu	2026-03-05	School of Engineering	Sarah	Mitchell	Data Science	Senior	Career Planning	Reviewed Best Buy offer; discussed negotiation strategy
-STU008	Caleb	Robinson	2026-04-12	Opus College of Business	David	Park	Accounting	Sophomore	Drop-in Advising	Resume basics overview; encouraged to attend career fair
-STU010	Tyler	Anderson	2026-03-30	College of Arts and Sciences	Sarah	Mitchell	Political Science	Senior	Career Planning	Discussed public sector pathways and policy internship options
+STU001	Marcus	Johnson	3/10/2026	Opus College of Business	Sarah	Mitchell	Business Administration	Senior	Mock Interview	Practiced behavioral questions for upcoming UnitedHealth Group interview
+STU001	Marcus	Johnson	4/15/2026	Opus College of Business	Sarah	Mitchell	Business Administration	Senior	Career Planning	Evaluated offer from Target Corporation; discussed negotiation approach
+STU002	Priya	Patel	2/18/2026	School of Engineering	David	Park	Computer Science	Senior	Resume Review	Strengthened technical skills section; updated project descriptions
+STU002	Priya	Patel	3/22/2026	School of Engineering	David	Park	Computer Science	Senior	Mock Interview	Final interview prep for Microsoft; worked on system design questions
+STU003	Aisha	Williams	3/20/2026	Opus College of Business	Sarah	Mitchell	Marketing	Junior	Resume Review	Strengthened marketing internship experience and campaign results
+STU004	Jordan	Chen	3/28/2026	Opus College of Business	David	Park	Finance	Junior	Career Planning	Prepared for Wells Fargo interview; discussed finance career pathways
+STU007	Mei	Liu	3/5/2026	School of Engineering	Sarah	Mitchell	Data Science	Senior	Career Planning	Reviewed Best Buy offer; discussed salary negotiation strategy
+STU008	Caleb	Robinson	4/12/2026	Opus College of Business	David	Park	Accounting	Sophomore	Drop-in Advising	Resume basics overview; encouraged to explore Handshake and attend upcoming events
+STU010	Tyler	Anderson	3/30/2026	College of Arts & Sciences	Sarah	Mitchell	Political Science	Senior	Career Planning	Discussed public sector pathways; reviewed federal and local government internship options
