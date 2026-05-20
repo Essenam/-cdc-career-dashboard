@@ -10,6 +10,7 @@ if (missing.length > 0) {
 
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const studentRoutes  = require('./routes/studentRoutes');
 const staffRoutes    = require('./routes/staffRoutes');
 const adminRoutes    = require('./routes/adminRoutes');
@@ -60,6 +61,14 @@ app.use('/api/tasks',   taskRoutes);
 // Staff-only routes — require a valid session token
 app.use('/api/staff', requireStaffAuth, staffRoutes);
 app.use('/api/admin', requireStaffAuth, adminRoutes);
+
+// Serve React build in production (same-origin — no CORS needed)
+// Must come before the error handler so unmatched routes fall through to index.html
+if (process.env.NODE_ENV === 'production') {
+  const buildPath = path.resolve(__dirname, '../../frontend/build').replace(/\\/g, '/');
+  app.use(express.static(buildPath));
+  app.use((_req, res) => res.sendFile(buildPath + '/index.html'));
+}
 
 app.use(errorHandler);
 

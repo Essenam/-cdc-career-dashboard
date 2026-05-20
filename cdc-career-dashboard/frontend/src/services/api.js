@@ -1,10 +1,11 @@
 import axios from 'axios';
 
-if (!process.env.REACT_APP_API_URL) {
-  console.warn('[CDC] REACT_APP_API_URL is not set — falling back to http://localhost:5000. Set this in your .env for production deployments.');
-}
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+// In production builds (NODE_ENV=production, set by CRA), default to '' so all
+// API calls use relative paths — works when Express serves the React build from
+// the same origin. In development, fall back to localhost:5000.
+const API_URL = process.env.REACT_APP_API_URL !== undefined
+  ? process.env.REACT_APP_API_URL
+  : process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
 
 const api = axios.create({ baseURL: API_URL });
 
