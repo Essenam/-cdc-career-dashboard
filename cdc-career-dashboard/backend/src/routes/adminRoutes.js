@@ -512,17 +512,9 @@ async function processEvents(filePath) {
               console.error('career_events insert error:', error.message, record.student_id);
             } else {
               processed++;
-              if (!studentTriggers[record.student_id]) studentTriggers[record.student_id] = { triggers: new Set(), date: null, label: null };
-              getEventTriggers(record.event_name, record.event_type).forEach(v => studentTriggers[record.student_id].triggers.add(v));
-              if (record.event_date && (!studentTriggers[record.student_id].date || record.event_date > studentTriggers[record.student_id].date)) {
-                studentTriggers[record.student_id].date = record.event_date;
-                studentTriggers[record.student_id].label = `Auto — ${record.event_name || record.event_type} (${fmtDate(record.event_date)})`;
-              }
+              const source = `Auto — ${record.event_name || record.event_type} (${fmtDate(record.event_date)})`;
+              await autoCompleteTriggeredTasks(record.student_id, getEventTriggers(record.event_name, record.event_type), record.event_date, source);
             }
-          }
-
-          for (const [sid, { triggers, date, label }] of Object.entries(studentTriggers)) {
-            await autoCompleteTriggeredTasks(sid, [...triggers], date, label);
           }
 
           resolve(processed);
@@ -592,17 +584,9 @@ async function processCareerFair(filePath) {
               console.error('career_fair insert error:', error.message, record.student_id);
             } else {
               processed++;
-              if (!studentTriggers[record.student_id]) studentTriggers[record.student_id] = { triggers: new Set(), date: null, label: null };
-              ['event:any', 'event:career_fair'].forEach(v => studentTriggers[record.student_id].triggers.add(v));
-              if (record.fair_date && (!studentTriggers[record.student_id].date || record.fair_date > studentTriggers[record.student_id].date)) {
-                studentTriggers[record.student_id].date = record.fair_date;
-                studentTriggers[record.student_id].label = `Auto — ${record.fair_name} (${fmtDate(record.fair_date)})`;
-              }
+              const source = `Auto — ${record.fair_name} (${fmtDate(record.fair_date)})`;
+              await autoCompleteTriggeredTasks(record.student_id, ['event:any', 'event:career_fair'], record.fair_date, source);
             }
-          }
-
-          for (const [sid, { triggers, date }] of Object.entries(studentTriggers)) {
-            await autoCompleteTriggeredTasks(sid, [...triggers], date);
           }
 
           resolve(processed);
@@ -682,17 +666,10 @@ async function processAppointments(filePath) {
               console.error('interview_appointments insert error:', error.message, record.student_id);
             } else {
               processed++;
-              if (!studentTriggers[record.student_id]) studentTriggers[record.student_id] = { triggers: new Set(), date: null, label: null };
-              getAppointmentTriggers(record.topic).forEach(v => studentTriggers[record.student_id].triggers.add(v));
-              if (record.appointment_date && (!studentTriggers[record.student_id].date || record.appointment_date > studentTriggers[record.student_id].date)) {
-                studentTriggers[record.student_id].date = record.appointment_date;
-                studentTriggers[record.student_id].label = `Auto — ${record.topic} appointment (${fmtDate(record.appointment_date)})`;
-              }
+              const advisorPart = record.staff_name ? ` with ${record.staff_name}` : '';
+              const source = `Auto — ${record.topic}${advisorPart} (${fmtDate(record.appointment_date)})`;
+              await autoCompleteTriggeredTasks(record.student_id, getAppointmentTriggers(record.topic), record.appointment_date, source);
             }
-          }
-
-          for (const [sid, { triggers, date }] of Object.entries(studentTriggers)) {
-            await autoCompleteTriggeredTasks(sid, [...triggers], date);
           }
 
           resolve(processed);
@@ -706,12 +683,12 @@ async function processAppointments(filePath) {
 
 async function recalculateAllScores() {
   try {
-    // Fetch activity data with content fields needed for trigger matching
+    // Fetch activity data with fields needed for trigger matching and source labels
     const [progressRes, appsRes, eventsRes, apptsRes] = await Promise.all([
       supabase.from('student_career_progress').select('student_id'),
       supabase.from('job_applications').select('student_id, status'),
-      supabase.from('career_events').select('student_id, event_title, event_type'),
-      supabase.from('interview_appointments').select('student_id, company_name')
+      supabase.from('career_events').select('student_id, event_title, event_type, attended_date'),
+      supabase.from('interview_appointments').select('student_id, company_name, scheduled_date, notes')
     ]);
 
     const existingIds = new Set((progressRes.data || []).map(r => r.student_id));
@@ -743,32 +720,40 @@ async function recalculateAllScores() {
       }
     }
 
-    // Build per-student trigger sets, grouped by source type for labelling
-    const eventTriggers = {}, appTriggers = {}, apptTriggers = {};
+    // Fire per-record triggers with specific source labels — same granularity as a fresh upload
+
+    // Events: one call per record with event name + date
     for (const e of eventsRes.data || []) {
       if (!e.student_id) continue;
-      if (!eventTriggers[e.student_id]) eventTriggers[e.student_id] = new Set();
-      getEventTriggers(e.event_title, e.event_type).forEach(v => eventTriggers[e.student_id].add(v));
+      const source = `Auto — ${e.event_title || e.event_type} (${fmtDate(e.attended_date)})`;
+      await autoCompleteTriggeredTasks(e.student_id, getEventTriggers(e.event_title, e.event_type), e.attended_date, source);
     }
+
+    // Appointments: one call per record with type + advisor + date
+    for (const a of apptsRes.data || []) {
+      if (!a.student_id) continue;
+      const advisorMatch = (a.notes || '').match(/Advisor: ([^·\n]+)/);
+      const advisor = advisorMatch ? advisorMatch[1].trim() : '';
+      const advisorPart = advisor ? ` with ${advisor}` : '';
+      const source = `Auto — ${a.company_name}${advisorPart} (${fmtDate(a.scheduled_date)})`;
+      await autoCompleteTriggeredTasks(a.student_id, getAppointmentTriggers(a.company_name), a.scheduled_date, source);
+    }
+
+    // Applications: per student, generic — too many apps to attribute to one
+    const appTriggers = {};
     for (const a of appsRes.data || []) {
       if (!a.student_id) continue;
       if (!appTriggers[a.student_id]) appTriggers[a.student_id] = new Set();
       getApplicationTriggers(a.status).forEach(v => appTriggers[a.student_id].add(v));
     }
-    for (const a of apptsRes.data || []) {
-      if (!a.student_id) continue;
-      if (!apptTriggers[a.student_id]) apptTriggers[a.student_id] = new Set();
-      getAppointmentTriggers(a.company_name).forEach(v => apptTriggers[a.student_id].add(v));
+    for (const [sid, triggers] of Object.entries(appTriggers)) {
+      await autoCompleteTriggeredTasks(sid, [...triggers], null, 'Auto — Job applications on Handshake');
     }
 
-    // Fire triggers retroactively, then recalculate scores
+    // Recalculate scores for every student
     const allIds = new Set([...existingIds, ...allActivityIds]);
     for (const id of allIds) {
-      if (!id) continue;
-      if (eventTriggers[id]?.size > 0) await autoCompleteTriggeredTasks(id, [...eventTriggers[id]], null, 'Auto — Career events on Handshake');
-      if (appTriggers[id]?.size   > 0) await autoCompleteTriggeredTasks(id, [...appTriggers[id]],   null, 'Auto — Job applications on Handshake');
-      if (apptTriggers[id]?.size  > 0) await autoCompleteTriggeredTasks(id, [...apptTriggers[id]],  null, 'Auto — CDC advising appointments');
-      await updateEngagementScore(id);
+      if (id) await updateEngagementScore(id);
     }
   } catch (error) {
     console.error('Error recalculating scores:', error);
