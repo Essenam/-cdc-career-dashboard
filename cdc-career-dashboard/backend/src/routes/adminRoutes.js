@@ -762,31 +762,37 @@ async function recalculateAllScores() {
 // activityDate sets completed_at so the timeline reflects the real activity date.
 async function autoCompleteTriggeredTasks(studentId, triggerValues, activityDate) {
   try {
-    const { data: studentRow } = await supabaseAdmin
+    const { data: studentRow, error: yearErr } = await supabaseAdmin
       .from('student_career_progress')
       .select('current_year')
       .eq('student_id', studentId)
       .single();
 
     const currentYear = studentRow?.current_year;
-    if (!currentYear) return;
+    console.log(`[trigger] ${studentId} year=${currentYear} triggers=[${triggerValues}]`);
+    if (yearErr) console.log(`[trigger] year fetch error:`, yearErr.message);
+    if (!currentYear) { console.log(`[trigger] skipped — no current_year`); return; }
 
-    const { data: tasks } = await supabase
+    const { data: tasks, error: tasksErr } = await supabase
       .from('roadmap_tasks')
-      .select('id')
+      .select('id, task_text')
       .eq('year', currentYear)
       .in('trigger', triggerValues);
 
+    if (tasksErr) console.log(`[trigger] tasks fetch error:`, tasksErr.message);
+    console.log(`[trigger] ${studentId} matched ${tasks?.length || 0} tasks`);
     if (!tasks?.length) return;
 
     const completedAt = activityDate || new Date().toISOString();
     for (const task of tasks) {
-      await supabaseAdmin
+      console.log(`[trigger] completing: ${studentId} → task_${task.id} (${task.task_text?.slice(0, 50)})`);
+      const { error: upsertErr } = await supabaseAdmin
         .from('task_completions')
         .upsert(
           { student_id: studentId, task_key: `task_${task.id}`, completed: true, completed_at: completedAt },
           { onConflict: 'student_id,task_key' }
         );
+      if (upsertErr) console.log(`[trigger] upsert error:`, upsertErr.message);
     }
   } catch (err) {
     console.error('autoCompleteTriggeredTasks error:', err.message, studentId, triggerValues);
