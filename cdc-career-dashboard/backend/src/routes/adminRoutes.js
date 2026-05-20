@@ -268,15 +268,14 @@ async function processStudentRoster(filePath) {
     fs.createReadStream(filePath)
       .pipe(csv({ separator: sep }))
       .on('data', (row) => {
-        // Support common Handshake roster column names
-        const studentId = row['Card Id'] || row['card_id'] || row['Student Card Id'] || row['ID'];
-        const firstName = row['First Name'] || row['first_name'] || '';
-        const lastName = row['Last Name'] || row['last_name'] || '';
-        const fullName = row['Full Name'] || row['Name'] || `${firstName} ${lastName}`.trim();
-        const email = row['Email'] || row['email'] || row['School Email'] || '';
-        const major = row['Major'] || row['Primary Major'] || row['major'] || '';
-        const gradDate = row['Graduation Date'] || row['Expected Graduation Date'] || null;
-        const schoolYear = row['School Year'] || row['Year'] || null;
+        const studentId  = row['Students Card Id'] || row['Card Id'] || row['Student Card Id'] || row['ID'];
+        const firstName  = row['Students First Name'] || row['First Name'] || row['first_name'] || '';
+        const lastName   = row['Students Last Name']  || row['Last Name']  || row['last_name']  || '';
+        const fullName   = row['Full Name'] || row['Name'] || `${firstName} ${lastName}`.trim();
+        const email      = row['Students Email - Primary'] || row['Email'] || row['School Email'] || '';
+        const major      = (row['Majors Name'] || row['Major'] || row['Primary Major'] || '').split(';')[0].trim();
+        const gradDate   = row['Students Self-Reported Graduation Date'] || row['Graduation Date'] || row['Expected Graduation Date'] || null;
+        const schoolYear = row['School Year Name'] || row['School Year'] || row['Year'] || null;
 
         if (studentId) {
           records.push({ studentId, firstName, lastName, fullName, email, major, gradDate, schoolYear });
