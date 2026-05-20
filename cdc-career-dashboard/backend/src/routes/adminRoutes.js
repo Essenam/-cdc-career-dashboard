@@ -697,12 +697,12 @@ async function processAppointments(filePath) {
 
 async function recalculateAllScores() {
   try {
-    // Collect every student ID that appears in any activity table
+    // Fetch activity data with content fields needed for trigger matching
     const [progressRes, appsRes, eventsRes, apptsRes] = await Promise.all([
       supabase.from('student_career_progress').select('student_id'),
-      supabase.from('job_applications').select('student_id'),
-      supabase.from('career_events').select('student_id'),
-      supabase.from('interview_appointments').select('student_id')
+      supabase.from('job_applications').select('student_id, status'),
+      supabase.from('career_events').select('student_id, event_title, event_type'),
+      supabase.from('interview_appointments').select('student_id, company_name')
     ]);
 
     const existingIds = new Set((progressRes.data || []).map(r => r.student_id));
@@ -734,10 +734,24 @@ async function recalculateAllScores() {
       }
     }
 
-    // Recalculate scores for every student
+    // Build per-student trigger sets from all existing activity
+    const triggerMap = {};
+    const addTriggers = (studentId, values) => {
+      if (!studentId) return;
+      if (!triggerMap[studentId]) triggerMap[studentId] = new Set();
+      values.forEach(v => triggerMap[studentId].add(v));
+    };
+
+    for (const e of eventsRes.data  || []) addTriggers(e.student_id, getEventTriggers(e.event_title, e.event_type));
+    for (const a of appsRes.data    || []) addTriggers(a.student_id, getApplicationTriggers(a.status));
+    for (const a of apptsRes.data   || []) addTriggers(a.student_id, getAppointmentTriggers(a.company_name));
+
+    // Fire triggers retroactively, then recalculate scores
     const allIds = new Set([...existingIds, ...allActivityIds]);
     for (const id of allIds) {
-      if (id) await updateEngagementScore(id);
+      if (!id) continue;
+      if (triggerMap[id]?.size > 0) await autoCompleteTriggeredTasks(id, [...triggerMap[id]], null);
+      await updateEngagementScore(id);
     }
   } catch (error) {
     console.error('Error recalculating scores:', error);
