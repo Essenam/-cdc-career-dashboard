@@ -22,14 +22,24 @@ const { requireStaffAuth } = require('./middleware/authMiddleware');
 const app = express();
 
 // CORS — allow only the configured frontend origin(s)
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://127.0.0.1:3000')
-  .split(',')
-  .map(s => s.trim());
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
+  : null; // null = dev mode: allow all localhost origins
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow non-browser requests (e.g. curl, health checks) and listed origins
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow non-browser requests (curl, health checks, etc.)
+    if (!origin) return callback(null, true);
+    // In production, restrict to configured origins
+    if (allowedOrigins) {
+      return allowedOrigins.includes(origin)
+        ? callback(null, true)
+        : callback(new Error(`CORS: origin ${origin} not allowed`));
+    }
+    // Dev default: allow any localhost/127.0.0.1/[::1] origin
+    if (/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
     callback(new Error(`CORS: origin ${origin} not allowed`));
   }
 }));
