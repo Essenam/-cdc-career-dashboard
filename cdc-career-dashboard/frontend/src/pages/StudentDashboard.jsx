@@ -162,6 +162,9 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
     return sections;
   };
 
+  const fmtFileSize = (bytes) =>
+    bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${(bytes / 1024).toFixed(0)} KB`;
+
   const taskKey = (taskId) => `task_${taskId}`;
 
   const isTaskCompleted = (taskId) => {
@@ -612,7 +615,7 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
                                               <span className="text-purple-500 text-base">📎</span>
                                             )}
                                             <span className="text-xs text-green-700 font-medium truncate max-w-[200px]">{proof.name}</span>
-                                            <span className="text-xs text-gray-400">({(proof.size / 1024).toFixed(0)} KB)</span>
+                                            <span className="text-xs text-gray-400">({fmtFileSize(proof.size)})</span>
                                             <button onClick={() => removeProof(task.id)} className="ml-auto text-xs text-red-400 hover:text-red-600 font-medium">Remove</button>
                                           </>
                                         ) : (
@@ -812,14 +815,18 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
                     <h3 className="font-bold text-gray-900 mb-2">{rec.title}</h3>
                     <p className="text-sm text-gray-600 mb-4">{rec.description}</p>
                     {rec.link ? (
-                      <a
-                        href={rec.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-purple-700 font-semibold text-sm hover:text-purple-900"
-                      >
-                        {rec.action} →
-                      </a>
+                      fromStaff ? (
+                        <span className="text-gray-400 text-sm italic">{rec.action} (links disabled in preview)</span>
+                      ) : (
+                        <a
+                          href={rec.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-purple-700 font-semibold text-sm hover:text-purple-900"
+                        >
+                          {rec.action} →
+                        </a>
+                      )
                     ) : (
                       <span className="text-green-600 font-semibold text-sm">{rec.action}</span>
                     )}

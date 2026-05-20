@@ -181,7 +181,7 @@ function AdminDashboard({ onUploadComplete }) {
                 <ul className="space-y-1">
                   {files.map((file, idx) => (
                     <li key={idx} className="text-sm text-gray-600">
-                      {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                      {file.name} ({file.size >= 1024 * 1024 ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : `${(file.size / 1024).toFixed(1)} KB`})
                     </li>
                   ))}
                 </ul>

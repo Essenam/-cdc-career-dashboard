@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { issueToken } = require('../middleware/authMiddleware');
 
 router.post('/staff', (req, res) => {
   const { password } = req.body;
@@ -9,7 +10,8 @@ router.post('/staff', (req, res) => {
     return res.status(500).json({ error: 'Staff password not configured on the server.' });
   }
   if (password === staffPassword) {
-    res.json({ success: true });
+    const token = issueToken();
+    res.json({ success: true, token });
   } else {
     res.status(401).json({ error: 'Incorrect password.' });
   }

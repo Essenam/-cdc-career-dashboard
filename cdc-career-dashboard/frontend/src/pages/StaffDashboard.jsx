@@ -6,6 +6,7 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
   const [summary, setSummary] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [filterRisk, setFilterRisk]           = useState(null);
   const [filterYear, setFilterYear]           = useState(null);
@@ -37,10 +38,13 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
 
   const handleToggleAnalytics = async () => {
     if (!analytics) {
+      setAnalyticsError(false);
       try {
         const res = await getStaffAnalytics();
         setAnalytics(res.data);
-      } catch { /* silently fail — analytics are non-critical */ }
+      } catch {
+        setAnalyticsError(true);
+      }
     }
     setShowAnalytics(v => !v);
   };
@@ -188,6 +192,12 @@ function StaffDashboard({ onViewStudent, refreshRef }) {
       )}
 
       {/* Analytics Panel */}
+      {showAnalytics && analyticsError && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium flex items-center gap-2">
+          <span>⚠️</span> Failed to load analytics. Check your connection and try again.
+          <button onClick={handleToggleAnalytics} className="ml-auto text-red-500 hover:text-red-700 text-xs underline">Retry</button>
+        </div>
+      )}
       {showAnalytics && analytics && (
         <div className="mb-6 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">

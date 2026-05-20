@@ -2,18 +2,13 @@ import React, { useState } from 'react';
 import { getStudentProfile, loginStaff } from '../services/api';
 
 function LoginPage({ onLogin }) {
-  const [role, setRole] = useState(null);
+  const [role, setRole]         = useState(null);
   const [studentId, setStudentId] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
 
-  const reset = () => {
-    setRole(null);
-    setError('');
-    setStudentId('');
-    setPassword('');
-  };
+  const reset = () => { setRole(null); setError(''); setStudentId(''); setPassword(''); };
 
   const handleStudentLogin = async (e) => {
     e.preventDefault();
@@ -37,8 +32,9 @@ function LoginPage({ onLogin }) {
     setLoading(true);
     setError('');
     try {
-      await loginStaff(password);
-      onLogin({ role: 'staff' });
+      const res = await loginStaff(password);
+      // Store the session token so the API interceptor can send it with future requests
+      onLogin({ role: 'staff', token: res.data.token });
     } catch (err) {
       setError(err.response?.data?.error || 'Incorrect password.');
     } finally {
@@ -56,7 +52,6 @@ function LoginPage({ onLogin }) {
           <p className="text-gray-500 text-sm">University of St. Thomas · Career Development Center</p>
         </div>
 
-        {/* Role selection */}
         {!role && (
           <div className="grid grid-cols-2 gap-4">
             <button
@@ -78,7 +73,6 @@ function LoginPage({ onLogin }) {
           </div>
         )}
 
-        {/* Student login */}
         {role === 'student' && (
           <div className="bg-white border-2 border-purple-200 rounded-2xl p-8 shadow-lg">
             <button onClick={reset} className="text-sm text-purple-500 hover:text-purple-700 mb-6 flex items-center gap-1">
@@ -86,7 +80,6 @@ function LoginPage({ onLogin }) {
             </button>
             <h2 className="text-2xl font-bold text-gray-900 mb-1">Student Login</h2>
             <p className="text-gray-500 text-sm mb-6">Enter your student ID to access your dashboard</p>
-
             <form onSubmit={handleStudentLogin} className="space-y-4">
               <input
                 type="text"
@@ -108,7 +101,6 @@ function LoginPage({ onLogin }) {
           </div>
         )}
 
-        {/* Staff login */}
         {role === 'staff' && (
           <div className="bg-white border-2 border-purple-200 rounded-2xl p-8 shadow-lg">
             <button onClick={reset} className="text-sm text-purple-500 hover:text-purple-700 mb-6 flex items-center gap-1">
@@ -116,7 +108,6 @@ function LoginPage({ onLogin }) {
             </button>
             <h2 className="text-2xl font-bold text-gray-900 mb-1">Staff Login</h2>
             <p className="text-gray-500 text-sm mb-6">Enter your staff password to continue</p>
-
             <form onSubmit={handleStaffLogin} className="space-y-4">
               <input
                 type="password"
