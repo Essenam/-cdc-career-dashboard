@@ -1,11 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createClient } = require('@supabase/supabase-js');
-
-// Initialize Supabase
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const { supabase } = require('../config/db');
 
 // GET all students — enriched with has_interview and has_accepted flags
 router.get('/students', async (req, res) => {
@@ -33,27 +28,6 @@ router.get('/students', async (req, res) => {
     }));
 
     res.json(enriched);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// GET students by risk level
-router.get('/students/risk/:level', async (req, res) => {
-  try {
-    const { level } = req.params;
-
-    const { data, error } = await supabase
-      .from('student_career_progress')
-      .select('*')
-      .eq('risk_level', level)
-      .order('engagement_score', { ascending: true });
-
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
-
-    res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

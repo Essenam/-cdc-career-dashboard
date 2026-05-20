@@ -26,10 +26,7 @@ export const getStudentInterviews = (studentId) =>
 export const getAllStudents = () => 
   api.get('/api/staff/students');
 
-export const getStudentsByRisk = (level) => 
-  api.get(`/api/staff/students/risk/${level}`);
-
-export const getStudentDetail = (studentId) => 
+export const getStudentDetail = (studentId) =>
   api.get(`/api/staff/students/${studentId}`);
 
 export const getDashboardSummary = () =>

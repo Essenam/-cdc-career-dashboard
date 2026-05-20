@@ -171,7 +171,7 @@ function AdminDashboard({ onUploadComplete }) {
                   hover:file:bg-blue-700 cursor-pointer"
               />
               <p className="text-xs text-gray-500 mt-2">
-                File name must include "students", "roster", "applications", "events", or "appointments"
+                Filename must include: <span className="font-medium">students</span>, <span className="font-medium">applications</span>, <span className="font-medium">fair</span>, <span className="font-medium">events</span>, or <span className="font-medium">appointments</span>
               </p>
             </div>
 
@@ -423,9 +423,24 @@ function AdminDashboard({ onUploadComplete }) {
                                   className="w-full border border-purple-300 rounded px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-purple-600"
                                 >
                                   <option value="">No auto-trigger (manual only)</option>
-                                  <option value="event">Auto-check when event imported</option>
-                                  <option value="application">Auto-check when application imported</option>
-                                  <option value="appointment">Auto-check when appointment imported</option>
+                                  <optgroup label="Events">
+                                    <option value="event:any">Any event attended</option>
+                                    <option value="event:career_fair">Career fair attended</option>
+                                    <option value="event:negotiation">Salary/negotiation workshop</option>
+                                  </optgroup>
+                                  <optgroup label="Appointments">
+                                    <option value="appointment:any">Any CDC appointment</option>
+                                    <option value="appointment:resume">Resume review appointment</option>
+                                    <option value="appointment:mock">Mock interview appointment</option>
+                                    <option value="appointment:offer">Offer evaluation appointment</option>
+                                  </optgroup>
+                                  <optgroup label="Applications">
+                                    <option value="application:any">Any application submitted</option>
+                                    <option value="application:accepted">Application accepted</option>
+                                  </optgroup>
+                                  <optgroup label="Documents">
+                                    <option value="document:resume">Resume uploaded to Handshake</option>
+                                  </optgroup>
                                 </select>
                                 <div className="flex gap-2">
                                   <button onClick={() => saveEdit(task.id)} className="px-3 py-1 bg-purple-700 text-white text-xs font-semibold rounded hover:bg-purple-800 transition">Save</button>
@@ -518,29 +533,36 @@ function AdminDashboard({ onUploadComplete }) {
         {/* Expected Format */}
         <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-6">
           <h3 className="text-xl font-bold text-gray-900 mb-4">Expected Column Headers</h3>
+          <p className="text-xs text-gray-500 mb-4">Filename must include the keyword shown. All files are tab-separated exports from Handshake.</p>
           <div className="space-y-4 text-sm">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="font-semibold text-blue-900 mb-1">students.csv or roster.csv <span className="font-normal text-blue-700">(upload this first to register student names)</span></p>
+              <p className="font-semibold text-blue-900 mb-1">students.csv <span className="font-normal text-blue-700">— upload first. One row per document; students with multiple docs appear multiple times.</span></p>
               <code className="block bg-white border border-gray-300 p-3 rounded text-xs text-gray-700 overflow-x-auto">
-                Card Id, First Name, Last Name, Email, Major, Graduation Date
+                Students Card Id · Students First Name · Students Last Name · Students Email - Primary · School Year Name · Majors Name · Colleges Name · Students Self-Reported Graduation Date · Document Types Name · Documents Document Name
               </code>
             </div>
             <div>
               <p className="font-semibold text-gray-900 mb-1">applications.csv</p>
               <code className="block bg-white border border-gray-300 p-3 rounded text-xs text-gray-700 overflow-x-auto">
-                Applicant (student) Card Id, Applicant (student) First Name, Applicant (student) Last Name, Employer Name, Job Title, Applications Created At Date, Applications Status, Applications Fully Qualified? (Yes / No), Job External Apply? (Yes / No)
+                Applicant (student) Card Id · Applicant (student) First Name · Applicant (student) Last Name · Applicant (student) Email - Institution · Applications Application Type · Employer Name · Job Title · Applications Status · Job External Apply? (Yes / No)
               </code>
             </div>
             <div>
-              <p className="font-semibold text-gray-900 mb-1">events.csv</p>
+              <p className="font-semibold text-gray-900 mb-1">fair.csv — career fair attendees</p>
               <code className="block bg-white border border-gray-300 p-3 rounded text-xs text-gray-700 overflow-x-auto">
-                Card Id, Content, Start Date Date, Staff Name
+                Student Attendees Card Id · Student Attendees First Name · Student Attendees Last Name · Student Attendees Email - Institution · Career Fairs Name · Career Fair Dates and Times Start Date · Student Attendee Majors Name · Student Attendee School Year (at Fair Time) Name
               </code>
             </div>
             <div>
-              <p className="font-semibold text-gray-900 mb-1">appointments.csv</p>
+              <p className="font-semibold text-gray-900 mb-1">events.csv — general events &amp; info sessions</p>
               <code className="block bg-white border border-gray-300 p-3 rounded text-xs text-gray-700 overflow-x-auto">
-                Card Id, Content, Start Date Time, Minutes Advising Time, Staff Name
+                Student Attendees Card Id · Student Attendees First Name · Student Attendees Last Name · Student Attendees Email - Institution · Events Name · Events Start Date Date · Student Attendee Majors Name · Event Type Name · Attendees Checked In? (Yes / No) · Student Attendee School Years Name
+              </code>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 mb-1">appointments.csv — CDC advising appointments</p>
+              <code className="block bg-white border border-gray-300 p-3 rounded text-xs text-gray-700 overflow-x-auto">
+                Student Card Id · Student First Name · Student Last Name · Appointments Start Date Date · Staff Member First Name · Staff Member Last Name · Student Majors (at Appt. Time) Name List · Student School Year (at Appt. Time) Name List · Appointment Types Name List · Appointments Description
               </code>
             </div>
           </div>

@@ -75,7 +75,7 @@ router.post('/reset', async (req, res) => {
       supabaseAdmin.from('job_applications').delete().neq('app_id', 'KEEP'),
       supabaseAdmin.from('career_events').delete().neq('event_id', 'KEEP'),
       supabaseAdmin.from('interview_appointments').delete().neq('appt_id', 'KEEP'),
-      supabaseAdmin.from('task_completions').delete().neq('id', 0),
+      supabaseAdmin.from('task_completions').delete().neq('student_id', 'KEEP'),
     ]);
     await supabaseAdmin.from('student_career_progress').delete().neq('student_id', 'KEEP');
     res.json({ success: true, message: 'All data cleared. Ready for a fresh upload.' });
