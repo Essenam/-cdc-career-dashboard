@@ -7,7 +7,7 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
   const [applications, setApplications] = useState([]);
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [expandedYear, setExpandedYear] = useState(3);
+  const [expandedYear, setExpandedYear] = useState(null);
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -131,6 +131,11 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
 
     loadCompletions();
   }, [student?.student_id]);
+
+  // Open the student's current year section automatically when data loads
+  useEffect(() => {
+    if (student?.current_year) setExpandedYear(student.current_year);
+  }, [student?.current_year]);
 
   const calculateYearProgress = (year) => {
     if (!student) return { pct: 0, completed: 0 };
@@ -500,13 +505,17 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
               {[1, 2, 3, 4].map((year) => {
                 const { pct, completed, total } = calculateYearProgress(year);
                 const isCurrent = year === currentYear;
+                const isExpanded = expandedYear === year;
                 return (
-                  <div
+                  <button
                     key={year}
-                    className={`p-5 rounded-lg border-2 ${
+                    onClick={() => setExpandedYear(isExpanded ? null : year)}
+                    className={`p-5 rounded-lg border-2 text-left transition hover:shadow-md ${
                       isCurrent
                         ? 'bg-gradient-to-br from-purple-200 to-pink-200 border-purple-700 shadow-lg relative'
-                        : 'bg-gradient-to-br from-purple-50 to-pink-50 border-purple-300'
+                        : isExpanded
+                          ? 'bg-gradient-to-br from-purple-100 to-pink-100 border-purple-500 shadow-md relative'
+                          : 'bg-gradient-to-br from-purple-50 to-pink-50 border-purple-300 hover:border-purple-500'
                     }`}
                   >
                     {isCurrent && (
@@ -523,7 +532,8 @@ function StudentDashboard({ setView, initialStudentId, fromStaff, locked }) {
                       ></div>
                     </div>
                     <p className="text-xs text-gray-700">{completed} of {total} complete</p>
-                  </div>
+                    <p className="text-xs text-purple-500 mt-2 font-medium">{isExpanded ? '▲ Hide tasks' : '▼ View tasks'}</p>
+                  </button>
                 );
               })}
             </div>
