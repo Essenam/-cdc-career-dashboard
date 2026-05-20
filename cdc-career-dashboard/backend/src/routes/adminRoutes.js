@@ -262,33 +262,45 @@ async function ensureStudentRecord(studentId, fields = {}) {
 
 async function processStudentRoster(filePath) {
   return new Promise((resolve, reject) => {
-    const records = [];
+    // Group by student ID — Handshake exports one row per document,
+    // so a student with a resume + cover letter appears twice.
+    const studentMap = {};
 
     const sep = detectSeparator(filePath);
     fs.createReadStream(filePath)
       .pipe(csv({ separator: sep }))
       .on('data', (row) => {
-        const studentId  = row['Students Card Id'] || row['Card Id'] || row['Student Card Id'] || row['ID'];
-        const firstName  = row['Students First Name'] || row['First Name'] || row['first_name'] || '';
-        const lastName   = row['Students Last Name']  || row['Last Name']  || row['last_name']  || '';
-        const fullName   = row['Full Name'] || row['Name'] || `${firstName} ${lastName}`.trim();
-        const email      = row['Students Email - Primary'] || row['Email'] || row['School Email'] || '';
-        const major      = (row['Majors Name'] || row['Major'] || row['Primary Major'] || '').split(';')[0].trim();
-        const gradDate   = row['Students Self-Reported Graduation Date'] || row['Graduation Date'] || row['Expected Graduation Date'] || null;
-        const schoolYear = row['School Year Name'] || row['School Year'] || row['Year'] || null;
+        const studentId = row['Students Card Id'] || row['Card Id'] || row['Student Card Id'] || row['ID'];
+        if (!studentId) return;
 
-        if (studentId) {
-          records.push({ studentId, firstName, lastName, fullName, email, major, gradDate, schoolYear });
+        if (!studentMap[studentId]) {
+          const firstName  = row['Students First Name'] || row['First Name'] || row['first_name'] || '';
+          const lastName   = row['Students Last Name']  || row['Last Name']  || row['last_name']  || '';
+          studentMap[studentId] = {
+            studentId,
+            firstName,
+            lastName,
+            fullName:    row['Full Name'] || row['Name'] || `${firstName} ${lastName}`.trim(),
+            email:       row['Students Email - Primary'] || row['Email'] || row['School Email'] || '',
+            major:       (row['Majors Name'] || row['Major'] || row['Primary Major'] || '').split(';')[0].trim(),
+            gradDate:    row['Students Self-Reported Graduation Date'] || row['Graduation Date'] || row['Expected Graduation Date'] || null,
+            schoolYear:  row['School Year Name'] || row['School Year'] || row['Year'] || null,
+            hasResume:   false,
+          };
         }
+
+        // Any row for this student may carry a document — check all of them
+        const docType = (row['Document Types Name'] || '').toLowerCase();
+        if (docType.includes('resume')) studentMap[studentId].hasResume = true;
       })
       .on('end', async () => {
         try {
           let processed = 0;
 
-          for (const r of records) {
-            const nameParts = r.fullName.split(' ');
+          for (const r of Object.values(studentMap)) {
+            const nameParts  = r.fullName.split(' ');
             const first_name = r.firstName || nameParts[0] || '';
-            const last_name = r.lastName || nameParts.slice(1).join(' ') || '';
+            const last_name  = r.lastName  || nameParts.slice(1).join(' ') || '';
 
             const { data: existing } = await supabase
               .from('student_career_progress')
@@ -297,12 +309,10 @@ async function processStudentRoster(filePath) {
               .single();
 
             if (existing) {
-              const updates = {
-                updated_at: new Date().toISOString()
-              };
+              const updates = { updated_at: new Date().toISOString() };
               if (r.fullName) { updates.full_name = r.fullName; updates.first_name = first_name; updates.last_name = last_name; }
-              if (r.email) updates.email = r.email;
-              if (r.major) updates.major = r.major;
+              if (r.email)    updates.email = r.email;
+              if (r.major)    updates.major = r.major;
               if (r.gradDate) updates.graduation_date = r.gradDate;
               const derivedYear = deriveCurrentYear(r.schoolYear, r.gradDate);
               if (derivedYear) updates.current_year = derivedYear;
@@ -317,22 +327,27 @@ async function processStudentRoster(filePath) {
               const { error } = await supabaseAdmin
                 .from('student_career_progress')
                 .insert({
-                  student_id: r.studentId,
-                  full_name: r.fullName || r.studentId,
+                  student_id:             r.studentId,
+                  full_name:              r.fullName || r.studentId,
                   first_name,
                   last_name,
-                  email: r.email || '',
-                  major: r.major || '',
-                  graduation_date: r.gradDate || null,
-                  current_year: deriveCurrentYear(r.schoolYear, r.gradDate),
-                  engagement_score: 0,
+                  email:                  r.email || '',
+                  major:                  r.major || '',
+                  graduation_date:        r.gradDate || null,
+                  current_year:           deriveCurrentYear(r.schoolYear, r.gradDate),
+                  engagement_score:       0,
                   career_events_attended: 0,
                   job_applications_count: 0,
-                  risk_level: 'need outreach',
-                  updated_at: new Date().toISOString()
+                  risk_level:             'need outreach',
+                  updated_at:             new Date().toISOString()
                 });
               if (!error) processed++;
               else console.error('roster insert error:', error.message, r.studentId);
+            }
+
+            // Resume uploaded to Handshake → infer student has created/updated their resume
+            if (r.hasResume) {
+              await autoCompleteTriggeredTasks(r.studentId, ['document:resume'], null);
             }
           }
 

@@ -35,6 +35,13 @@ const triggers = [
   { trigger: 'event:any',         pattern: '%Attend networking events, informational sessions%' },
   { trigger: 'appointment:resume',pattern: '%Get feedback from CDC advisors and mentors on your resume%' },
 
+  // ── document:resume — student has a resume uploaded to Handshake ────────
+  // One task per year so the trigger always lands on the student's current year
+  { trigger: 'document:resume', pattern: '%Create or update your resume using Jobscan%' },
+  { trigger: 'document:resume', pattern: '%Update your resume & personal statement based on Handshake%' },
+  { trigger: 'document:resume', pattern: '%Tailor your resume and LinkedIn profile for roles%' },
+  { trigger: 'document:resume', pattern: '%Continually develop & refine your LinkedIn profile and resume%' },
+
   // ── Year 4 ──────────────────────────────────────────────────────────────
   { trigger: 'application:any',      pattern: '%Search for full-time positions on Handshake%' },
   { trigger: 'application:any',      pattern: '%Prepare and submit applications for employment%' },
