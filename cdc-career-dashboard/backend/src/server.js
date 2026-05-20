@@ -22,7 +22,7 @@ const { requireStaffAuth } = require('./middleware/authMiddleware');
 const app = express();
 
 // CORS — allow only the configured frontend origin(s)
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://127.0.0.1:3000')
   .split(',')
   .map(s => s.trim());
 
