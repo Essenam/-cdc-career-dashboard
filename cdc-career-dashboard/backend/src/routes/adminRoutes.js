@@ -21,7 +21,10 @@ function getAppointmentTriggers(appointmentTypes) {
   // appointmentTypes may be a semicolon-separated list, e.g. "Resume Review; Career Planning"
   const t = (appointmentTypes || '').toLowerCase();
   const values = ['appointment:any'];
-  if (t.includes('resume')) values.push('appointment:resume');
+  if (t.includes('resume')) {
+    values.push('appointment:resume');
+    values.push('document:resume'); // resume review implies having a resume — fires Y1/Y4 resume tasks too
+  }
   if (t.includes('mock') || t.includes('interview')) values.push('appointment:mock');
   if (t.includes('offer') || t.includes('negotiat') || t.includes('salary')) values.push('appointment:offer');
   return values;
