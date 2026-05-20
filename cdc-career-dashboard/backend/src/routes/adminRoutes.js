@@ -655,8 +655,8 @@ async function processAppointments(filePath) {
                 scheduled_date: record.appointment_date,
                 duration_minutes: 30,
                 notes: [
-                  record.staff_name  ? `Advisor: ${record.staff_name}` : null,
-                  record.description ? `Notes: ${record.description}`  : null,
+                  record.staff_name  ? `Career Coach: ${record.staff_name}` : null,
+                  record.description ? `Notes: ${record.description}`        : null,
                 ].filter(Boolean).join(' · ') || null,
                 status: 'completed',
                 source: 'cdc'
@@ -732,7 +732,7 @@ async function recalculateAllScores() {
     // Appointments: one call per record with type + advisor + date
     for (const a of apptsRes.data || []) {
       if (!a.student_id) continue;
-      const advisorMatch = (a.notes || '').match(/Advisor: ([^·\n]+)/);
+      const advisorMatch = (a.notes || '').match(/(?:Career Coach|Advisor): ([^·\n]+)/);
       const advisor = advisorMatch ? advisorMatch[1].trim() : '';
       const advisorPart = advisor ? ` with ${advisor}` : '';
       const source = `Auto — ${a.company_name}${advisorPart} (${fmtDate(a.scheduled_date)})`;
