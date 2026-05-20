@@ -16,7 +16,8 @@ const client = new Client({
 async function run() {
   await client.connect();
   await client.query(`ALTER TABLE task_completions ADD COLUMN IF NOT EXISTS source TEXT;`);
-  console.log('Done — source column added to task_completions.');
+  await client.query(`NOTIFY pgrst, 'reload schema';`);
+  console.log('Done — source column added and schema cache reloaded.');
   await client.end();
 }
 
