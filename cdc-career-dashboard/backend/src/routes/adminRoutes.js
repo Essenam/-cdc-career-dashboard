@@ -50,16 +50,25 @@ function detectSeparator(filePath) {
 const router = express.Router();
 
 // Multer: 50 MB limit, CSV/TSV/TXT files only
+// fileFilter uses cb(null, false) to silently reject bad files so multer doesn't drop
+// the connection; the route handler checks for rejected files explicitly.
 const ALLOWED_EXTENSIONS = new Set(['.csv', '.tsv', '.txt']);
 const upload = multer({
   dest: 'uploads/',
   limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    if (ALLOWED_EXTENSIONS.has(ext)) return cb(null, true);
-    cb(new Error(`Only CSV/TSV files are accepted. Received: ${file.originalname}`));
+    cb(null, ALLOWED_EXTENSIONS.has(ext));
   }
 });
+
+function hasRejectedFile(req) {
+  // multer 2.x: files with cb(null,false) appear in req.body as nothing — original files
+  // are available via the incoming field; detect by comparing field count to accepted files.
+  // Simpler: check if originalname extension is disallowed for every uploaded file.
+  const files = req.files || (req.file ? [req.file] : []);
+  return files.length === 0;
+}
 
 // Reset all data
 router.post('/reset', async (req, res) => {
@@ -115,29 +124,34 @@ router.get('/diagnostics', async (req, res) => {
 });
 
 // Preview CSV headers and first row
-router.post('/preview-csv', upload.single('file'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+router.post('/preview-csv', (req, res) => {
+  upload.single('file')(req, res, async (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded or file type not allowed. Use .csv, .tsv, or .txt.' });
 
-  const headers = [];
-  const rows = [];
+    const headers = [];
+    const rows = [];
 
-  try {
-    const done = await new Promise((resolve) => {
-      const sep = detectSeparator(req.file.path);
-      fs.createReadStream(req.file.path)
-        .pipe(csv({ separator: sep }))
-        .on('headers', (h) => headers.push(...h))
-        .on('data', (row) => { if (rows.length < 3) rows.push(row); })
-        .on('end', () => resolve(true))
-        .on('error', () => resolve(false));
-    });
-    res.json({ headers, sampleRows: rows });
-  } finally {
-    try { fs.unlinkSync(req.file.path); } catch {}
-  }
+    try {
+      await new Promise((resolve) => {
+        const sep = detectSeparator(req.file.path);
+        fs.createReadStream(req.file.path)
+          .pipe(csv({ separator: sep }))
+          .on('headers', (h) => headers.push(...h))
+          .on('data', (row) => { if (rows.length < 3) rows.push(row); })
+          .on('end', () => resolve(true))
+          .on('error', () => resolve(false));
+      });
+      res.json({ headers, sampleRows: rows });
+    } finally {
+      try { fs.unlinkSync(req.file.path); } catch {}
+    }
+  });
 });
 
-router.post('/upload-csv', upload.array('files'), async (req, res) => {
+router.post('/upload-csv', (req, res) => {
+  upload.array('files')(req, res, async (err) => {
+  if (err) return res.status(400).json({ error: err.message });
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ error: 'No files uploaded' });
   }
@@ -199,6 +213,7 @@ router.post('/upload-csv', upload.array('files'), async (req, res) => {
     recordsProcessed: totalRecordsProcessed,
     warnings
   });
+  }); // end upload.array callback
 });
 
 async function ensureStudentRecord(studentId, fields = {}) {
