@@ -1,0 +1,26 @@
+Applicant (student) Card Id,Applicant (student) First Name,Applicant (student) Last Name,Applicant (student) Email - Institution,Major,Graduation Date,Employer Name,Job Title,Applications Application Type,Applications Status,Applications Created At Date,Applications Fully Qualified? (Yes / No),Job External Apply? (Yes / No)
+STU104,Michael,Chen,mchen@stthomas.edu,Finance,2026-05-15,Google,Software Engineer Intern,Internship,accepted,2026-01-15,Yes,No
+STU104,Michael,Chen,mchen@stthomas.edu,Finance,2026-05-15,Amazon,Data Analyst Intern,Internship,interviewing,2026-02-01,Yes,No
+STU104,Michael,Chen,mchen@stthomas.edu,Finance,2026-05-15,Goldman Sachs,Finance Analyst,Full-Time,declined,2025-11-15,Yes,No
+STU108,Noah,Martinez,nmartinez@stthomas.edu,Accounting,2026-05-15,Deloitte,Accounting Analyst,Full-Time,accepted,2026-01-20,Yes,No
+STU108,Noah,Martinez,nmartinez@stthomas.edu,Accounting,2026-05-15,PwC,Tax Associate,Full-Time,interviewing,2026-02-10,Yes,No
+STU108,Noah,Martinez,nmartinez@stthomas.edu,Accounting,2026-05-15,EY,Audit Associate,Full-Time,pending,2026-02-25,Yes,No
+STU108,Noah,Martinez,nmartinez@stthomas.edu,Accounting,2026-05-15,KPMG,Tax Consultant,Full-Time,pending,2026-03-10,Yes,No
+STU112,Liam,Jackson,ljackson@stthomas.edu,Business Administration,2026-05-15,Target,Business Analyst,Full-Time,accepted,2026-03-01,Yes,No
+STU112,Liam,Jackson,ljackson@stthomas.edu,Business Administration,2026-05-15,Best Buy,Marketing Analyst,Full-Time,declined,2026-01-10,Yes,No
+STU112,Liam,Jackson,ljackson@stthomas.edu,Business Administration,2026-05-15,UnitedHealth Group,Business Analyst,Full-Time,pending,2026-04-01,Yes,No
+STU115,Ava,Harris,aharris@stthomas.edu,Marketing,2026-05-15,General Mills,Marketing Coordinator,Full-Time,interviewing,2026-02-15,Yes,No
+STU115,Ava,Harris,aharris@stthomas.edu,Marketing,2026-05-15,Target,Brand Marketing Intern,Internship,accepted,2026-02-28,Yes,No
+STU115,Ava,Harris,aharris@stthomas.edu,Marketing,2026-05-15,Cargill,Brand Manager,Full-Time,pending,2026-03-25,Yes,No
+STU102,James,Williams,jwilliams@stthomas.edu,Computer Science,2028-05-15,Microsoft,Software Engineer Intern,Internship,pending,2026-03-10,Yes,No
+STU102,James,Williams,jwilliams@stthomas.edu,Computer Science,2028-05-15,Meta,Product Manager Intern,Internship,pending,2026-03-15,Yes,No
+STU102,James,Williams,jwilliams@stthomas.edu,Computer Science,2028-05-15,Target,IT Analyst Intern,Internship,interviewing,2026-04-20,Yes,No
+STU107,Olivia,Davis,odavis@stthomas.edu,Communication,2027-05-15,3M,Communications Specialist,Internship,interviewing,2026-02-20,Yes,No
+STU107,Olivia,Davis,odavis@stthomas.edu,Communication,2027-05-15,Mayo Clinic,Communications Intern,Internship,declined,2026-01-30,Yes,No
+STU114,Benjamin,White,bwhite@stthomas.edu,Computer Science,2027-05-15,Apple,Software Engineer Intern,Internship,pending,2026-04-01,Yes,No
+STU114,Benjamin,White,bwhite@stthomas.edu,Computer Science,2027-05-15,Google,Software Engineer Intern,Internship,interviewing,2026-04-15,Yes,No
+STU103,Sofia,Rodriguez,srodriguez@stthomas.edu,Psychology,2027-05-15,Mayo Clinic,Research Assistant,Internship,pending,2026-03-05,Yes,No
+STU111,Mia,Garcia,mgarcia@stthomas.edu,Biology,2027-05-15,Medtronic,Lab Research Intern,Internship,pending,2026-03-20,Yes,No
+STU106,Tyler,Brown,tbrown@stthomas.edu,Mechanical Engineering,2028-05-15,Honeywell,Engineering Intern,Internship,pending,2026-04-05,Yes,No
+STU101,Emma,Johnson,ejohnson@stthomas.edu,Business Administration,2029-05-15,Wells Fargo,Business Intern,Internship,pending,2026-04-10,Yes,No
+STU110,Ethan,Anderson,eanderson@stthomas.edu,Political Science,2028-05-15,US Senate Office,Policy Intern,Internship,pending,2026-03-15,Yes,No

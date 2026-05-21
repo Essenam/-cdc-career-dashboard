@@ -1,0 +1,16 @@
+Student Attendees Card Id,Student Attendees First Name,Student Attendees Last Name,Student Attendees Email - Institution,Events Name,Events Start Date Date,Student Attendee Majors Name,Event Type Name,Attendees Checked In? (Yes / No),Student Attendee School Years Name
+STU102,James,Williams,jwilliams@stthomas.edu,Resume Writing Workshop,2025-09-15,Computer Science,Workshop,Yes,Sophomore
+STU103,Sofia,Rodriguez,srodriguez@stthomas.edu,Resume Writing Workshop,2025-09-15,Psychology,Workshop,Yes,Junior
+STU107,Olivia,Davis,odavis@stthomas.edu,LinkedIn Profile Building Workshop,2025-09-20,Communication,Workshop,Yes,Junior
+STU114,Benjamin,White,bwhite@stthomas.edu,Resume Writing Workshop,2025-09-15,Computer Science,Workshop,Yes,Junior
+STU104,Michael,Chen,mchen@stthomas.edu,Salary Negotiation Seminar,2025-10-05,Finance,Workshop,Yes,Senior
+STU108,Noah,Martinez,nmartinez@stthomas.edu,Salary Negotiation Seminar,2025-10-05,Accounting,Workshop,Yes,Senior
+STU115,Ava,Harris,aharris@stthomas.edu,Salary Negotiation Seminar,2025-10-05,Marketing,Workshop,Yes,Senior
+STU112,Liam,Jackson,ljackson@stthomas.edu,Career Fair Prep Workshop,2025-10-15,Business Administration,Workshop,Yes,Senior
+STU111,Mia,Garcia,mgarcia@stthomas.edu,Networking 101,2025-09-10,Biology,Info Session,Yes,Junior
+STU112,Liam,Jackson,ljackson@stthomas.edu,Networking 101,2025-09-10,Business Administration,Info Session,Yes,Senior
+STU114,Benjamin,White,bwhite@stthomas.edu,Tech Talk: Breaking into Software,2025-11-01,Computer Science,Info Session,Yes,Junior
+STU101,Emma,Johnson,ejohnson@stthomas.edu,First-Year Career Kickoff,2025-09-05,Business Administration,Info Session,Yes,Freshman
+STU105,Aisha,Thompson,athompson@stthomas.edu,First-Year Career Kickoff,2025-09-05,Marketing,Info Session,Yes,Freshman
+STU106,Tyler,Brown,tbrown@stthomas.edu,Engineering Industry Night,2025-10-20,Mechanical Engineering,Info Session,Yes,Sophomore
+STU110,Ethan,Anderson,eanderson@stthomas.edu,Government Careers Panel,2025-11-10,Political Science,Info Session,Yes,Sophomore
