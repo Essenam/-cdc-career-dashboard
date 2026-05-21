@@ -27,23 +27,26 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
   : null; // null = dev mode: allow all localhost origins
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow non-browser requests (curl, health checks, etc.)
-    if (!origin) return callback(null, true);
-    // In production, restrict to configured origins
-    if (allowedOrigins) {
-      return allowedOrigins.includes(origin)
-        ? callback(null, true)
-        : callback(new Error(`CORS: origin ${origin} not allowed`));
+app.use((req, res, next) => {
+  // In production same-origin mode (Express serves the React build), browsers
+  // still send Origin on POST requests — allow it when it matches our own host.
+  const origin = req.headers.origin;
+  const host   = req.headers.host;
+  if (!origin || (host && origin.includes(host))) return next();
+  cors({
+    origin: (o, cb) => {
+      if (!o) return cb(null, true);
+      if (allowedOrigins) {
+        return allowedOrigins.includes(o)
+          ? cb(null, true)
+          : cb(new Error(`CORS: origin ${o} not allowed`));
+      }
+      // Dev default: any localhost/127.0.0.1/[::1]
+      if (/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(o)) return cb(null, true);
+      cb(new Error(`CORS: origin ${o} not allowed`));
     }
-    // Dev default: allow any localhost/127.0.0.1/[::1] origin
-    if (/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(origin)) {
-      return callback(null, true);
-    }
-    callback(new Error(`CORS: origin ${origin} not allowed`));
-  }
-}));
+  })(req, res, next);
+});
 
 app.use(express.json({ limit: '2mb' }));
 
