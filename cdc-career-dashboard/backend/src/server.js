@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 // Validate required env vars before loading anything that might silently fail
-const REQUIRED_ENV = ['SUPABASE_URL', 'SUPABASE_KEY', 'STAFF_PASSWORD'];
+const REQUIRED_ENV = ['SUPABASE_URL', 'SUPABASE_KEY', 'STAFF_PASSWORD', 'JWT_SECRET'];
 const missing = REQUIRED_ENV.filter(k => !process.env[k]);
 if (missing.length > 0) {
   console.error(`[startup] Missing required environment variables: ${missing.join(', ')}`);
