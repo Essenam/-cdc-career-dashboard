@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nuse — Control Room</title>
+<style>
+  :root {
+    --bg: #f9f8f5;
+    --surface: #ffffff;
+    --surface2: #f2f1ed;
+    --border: rgba(0,0,0,0.1);
+    --text: #1a1a18;
+    --muted: #6b6b67;
+    --hint: #9b9b96;
+    --green: #1D9E75;
+    --green-bg: #E1F5EE;
+    --amber: #BA7517;
+    --amber-bg: #FAEEDA;
+    --red: #A32D2D;
+    --red-bg: #FCEBEB;
+    --purple: #534AB7;
+    --purple-bg: #EEEDFE;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a18;
+      --surface: #242422;
+      --surface2: #2e2e2b;
+      --border: rgba(255,255,255,0.1);
+      --text: #f0efe9;
+      --muted: #a0a09a;
+      --hint: #6b6b67;
+      --green: #5DCAA5;
+      --green-bg: #085041;
+      --amber: #EF9F27;
+      --amber-bg: #633806;
+      --red: #F09595;
+      --red-bg: #501313;
+      --purple: #AFA9EC;
+      --purple-bg: #26215C;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+  /* Layout */
+  header { padding: 18px 24px 14px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface); position: sticky; top: 0; z-index: 10; }
+  .logo { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+  .logo span { color: var(--green); }
+  .tagline { font-size: 11px; color: var(--hint); letter-spacing: .06em; text-transform: uppercase; }
+  .tabs { display: flex; gap: 2px; background: var(--surface2); border-radius: var(--radius-sm); padding: 3px; }
+  .tab { padding: 5px 14px; border-radius: 5px; font-size: 13px; color: var(--muted); cursor: pointer; border: none; background: transparent; transition: all .15s; }
+  .tab.active { background: var(--surface); color: var(--text); font-weight: 500; }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  main { max-width: 900px; margin: 0 auto; padding: 24px 20px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 12px; }
+  .card-title { font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+  .card-muted { font-size: 12px; color: var(--muted); }
+
+  /* Critical path */
+  .path-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .path-item:last-child { border-bottom: none; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; margin-top: 1px; }
+  .step-done .step-num { background: var(--green-bg); color: var(--green); }
+  .step-active .step-num { background: var(--amber-bg); color: var(--amber); }
+  .step-parked .step-num { background: var(--surface2); color: var(--hint); }
+  .step-pending .step-num { background: var(--surface2); color: var(--hint); }
+  .step-title { font-size: 13px; font-weight: 500; }
+  .step-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; letter-spacing: .04em; text-transform: uppercase; margin-left: 6px; vertical-align: middle; }
+  .badge-done { background: var(--green-bg); color: var(--green); }
+  .badge-now { background: var(--amber-bg); color: var(--amber); }
+  .badge-parked { background: var(--surface2); color: var(--hint); }
+  .badge-blocked { background: var(--red-bg); color: var(--red); }
+
+  /* Agents */
+  .agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .agent-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .agent-card.parked { opacity: .55; }
+  .agent-icon { font-size: 22px; margin-bottom: 8px; }
+  .agent-name { font-size: 14px; font-weight: 600; }
+  .agent-role { font-size: 12px; color: var(--muted); margin: 3px 0 10px; line-height: 1.45; }
+  .agent-status { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  .status-active { color: var(--green); }
+  .status-parked { color: var(--hint); }
+  .copy-btn { margin-top: 12px; width: 100%; padding: 7px 0; border-radius: var(--radius-sm); border: 0.5px solid var(--border); background: var(--surface2); color: var(--text); font-size: 12px; cursor: pointer; transition: background .12s; }
+  .copy-btn:hover { background: var(--border); }
+  .copy-btn.copied { background: var(--green-bg); color: var(--green); border-color: var(--green); }
+
+  /* Ewe Keyboard */
+  .kb-area { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  textarea#ewe-out { width: 100%; min-height: 100px; font-size: 16px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); background: var(--surface2); color: var(--text); padding: 10px 12px; resize: vertical; font-family: inherit; margin-bottom: 14px; }
+  .section-label { font-size: 10px; color: var(--hint); text-transform: uppercase; letter-spacing: .08em; margin: 12px 0 6px; }
+  .key-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 5px; }
+  .key { background: var(--surface2); border: 0.5px solid var(--border); border-radius: var(--radius-sm); width: 42px; height: 42px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 17px; color: var(--text); transition: background .1s; user-select: none; line-height: 1; }
+  .key:hover { background: var(--border); }
+  .key:active { transform: scale(.94); }
+  .key.wide { width: 68px; font-size: 12px; color: var(--muted); }
+  .key.tone { font-size: 12px; width: 52px; }
+  .key sup { font-size: 8px; color: var(--hint); }
+  .kb-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .kb-actions button { font-size: 12px; padding: 6px 14px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); background: var(--surface2); color: var(--muted); cursor: pointer; }
+  .kb-actions button:hover { background: var(--border); }
+  .kb-actions .copy-out { color: var(--green); border-color: var(--green); background: var(--green-bg); }
+
+  /* Parking lot */
+  .park-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .park-item:last-child { border-bottom: none; }
+  .park-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--hint); flex-shrink: 0; margin-top: 5px; }
+  .park-title { font-size: 13px; font-weight: 500; }
+  .park-why { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* Prompts (hidden) */
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">N<span>use</span></div>
+    <div class="tagline">Control Room &middot; Lomé Pilot</div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('path')">Critical Path</button>
+    <button class="tab" onclick="showTab('agents')">Agents</button>
+    <button class="tab" onclick="showTab('keyboard')">Ewe Keyboard</button>
+    <button class="tab" onclick="showTab('parking')">Parking Lot</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- CRITICAL PATH -->
+  <div id="tab-path" class="panel active">
+    <div class="card">
+      <div class="card-title">Pilot launch sequence</div>
+      <div class="card-muted">Check off as you go. The pilot is the priority — everything else waits.</div>
+
+      <div style="margin-top: 14px;">
+
+        <div class="path-item step-active">
+          <div class="step-num">1</div>
+          <div>
+            <div class="step-title">Ewe video translations <span class="badge badge-now">Now</span></div>
+            <div class="step-desc">Learn section videos must be in Ewe/French before pilot. Nothing blocks this.</div>
+          </div>
+        </div>
+
+        <div class="path-item step-pending">
+          <div class="step-num">2</div>
+          <div>
+            <div class="step-title">Pilot launch — low friction</div>
+            <div class="step-desc">Phone + PIN only. No OTP. 20–50 women in Lomé. Field researcher assists entry.</div>
+          </div>
+        </div>
+
+        <div class="path-item step-pending">
+          <div class="step-num">3</div>
+          <div>
+            <div class="step-title">Collect real data + WhatsApp voice notes</div>
+            <div class="step-desc">Every entry is a data point. Every voice note is a training example. Store audio in Supabase Storage.</div>
+          </div>
+        </div>
+
+        <div class="path-item step-pending">
+          <div class="step-num">4</div>
+          <div>
+            <div class="step-title">Voice pipeline: WhatsApp → Storage → Whisper → DB</div>
+            <div class="step-desc">Build after pilot is live. WhatsApp Business API webhook → edge function → Supabase Storage → transcription.</div>
+          </div>
+        </div>
+
+        <div class="path-item step-pending">
+          <div class="step-num">5</div>
+          <div>
+            <div class="step-title">Task #34 — WhatsApp OTP edge function</div>
+            <div class="step-desc">Post-pilot friction reduction. Meta WABA approval + BSP (360dialog). Flip PHONE_VERIFICATION_REQUIRED = true.</div>
+          </div>
+        </div>
+
+        <div class="path-item step-pending">
+          <div class="step-num">6</div>
+          <div>
+            <div class="step-title">Task #35 — Automated PIN reset via WhatsApp <span class="badge badge-blocked">Blocked by #34</span></div>
+            <div class="step-desc">Generate temp PIN, bcrypt hash with 15-min expiry, send via WhatsApp, force new PIN on login.</div>
+          </div>
+        </div>
+
+        <div class="path-item step-pending">
+          <div class="step-num">7</div>
+          <div>
+            <div class="step-title">Migrate off Lovable → own Supabase + Cowork/VSCode</div>
+            <div class="step-desc">Export data, point app to self-hosted Supabase, switch AI dev to Cowork. Do this after pilot is stable.</div>
+          </div>
+        </div>
+
+        <div class="path-item step-pending">
+          <div class="step-num">8</div>
+          <div>
+            <div class="step-title">Play Store — Capacitor wrapper</div>
+            <div class="step-desc">Wrap existing React app with Capacitor → APK → Google Play. After migration is done.</div>
+          </div>
+        </div>
+
+        <div class="path-item step-pending">
+          <div class="step-num">9</div>
+          <div>
+            <div class="step-title">Pro tier — picture input</div>
+            <div class="step-desc">Receipt + mobile money screenshot parsing. Supabase Storage + vision model. After migration.</div>
+          </div>
+        </div>
+
+        <div class="path-item step-pending">
+          <div class="step-num">10</div>
+          <div>
+            <div class="step-title">Whisper fine-tuning on pilot data</div>
+            <div class="step-desc">Fine-tune on real Ewe/French code-switched recordings collected during pilot. Needs 1,000+ examples first.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- AGENTS -->
+  <div id="tab-agents" class="panel">
+    <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">Each agent is a Claude conversation with a tailored system prompt. Click "Copy prompt" then paste into a new Claude chat.</p>
+    <div class="agent-grid">
+
+      <div class="agent-card">
+        <div class="agent-icon">🌿</div>
+        <div class="agent-name">Ama — Chief of Staff</div>
+        <div class="agent-role">Keeps you on the critical path. Parks distractions. Coordinates all other agents. Start here every session.</div>
+        <div class="agent-status status-active">● Active</div>
+        <button class="copy-btn" onclick="copyPrompt('ama', this)">Copy prompt →</button>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-icon">🔧</div>
+        <div class="agent-name">Build agent</div>
+        <div class="agent-role">Writes code, migrations, edge functions. Knows the Nuse stack: Vite + React + Supabase + Tailwind.</div>
+        <div class="agent-status status-active">● Active</div>
+        <button class="copy-btn" onclick="copyPrompt('build', this)">Copy prompt →</button>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-icon">🔍</div>
+        <div class="agent-name">Research agent</div>
+        <div class="agent-role">Technical decisions, vendor comparisons, BCEAO compliance, WhatsApp BSP options, Capacitor docs.</div>
+        <div class="agent-status status-active">● Active</div>
+        <button class="copy-btn" onclick="copyPrompt('research', this)">Copy prompt →</button>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-icon">🌍</div>
+        <div class="agent-name">Field agent</div>
+        <div class="agent-role">Pilot logistics, user feedback synthesis, Ewe/French content, onboarding scripts, reminder messages.</div>
+        <div class="agent-status status-active">● Active</div>
+        <button class="copy-btn" onclick="copyPrompt('field', this)">Copy prompt →</button>
+      </div>
+
+      <div class="agent-card parked">
+        <div class="agent-icon">🎙️</div>
+        <div class="agent-name">Voice / AI agent</div>
+        <div class="agent-role">Whisper fine-tuning, Ewe model training, speech pipeline architecture. Parked until pilot data exists.</div>
+        <div class="agent-status status-parked">⏸ Parked — needs pilot data</div>
+        <button class="copy-btn" onclick="copyPrompt('voice', this)">Copy prompt →</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- EWE KEYBOARD -->
+  <div id="tab-keyboard" class="panel">
+    <div class="kb-area">
+      <p style="font-size:12px; color:var(--muted); margin-bottom:10px;">Type or paste text below. Use the keys for special Ewe characters. Works alongside audio in another tab.</p>
+      <textarea id="ewe-out" placeholder="Transcribe here…"></textarea>
+
+      <div class="section-label">Special vowels</div>
+      <div class="key-row">
+        <div class="key" onclick="ins('ɛ')">ɛ</div>
+        <div class="key" onclick="ins('Ɛ')">Ɛ</div>
+        <div class="key" onclick="ins('ɔ')">ɔ</div>
+        <div class="key" onclick="ins('Ɔ')">Ɔ</div>
+      </div>
+
+      <div class="section-label">Special consonants</div>
+      <div class="key-row">
+        <div class="key" onclick="ins('ƒ')">ƒ</div>
+        <div class="key" onclick="ins('Ƒ')">Ƒ</div>
+        <div class="key" onclick="ins('ŋ')">ŋ</div>
+        <div class="key" onclick="ins('Ŋ')">Ŋ</div>
+        <div class="key" onclick="ins('ɖ')">ɖ</div>
+        <div class="key" onclick="ins('Ɖ')">Ɖ</div>
+        <div class="key" onclick="ins('ɣ')">ɣ</div>
+        <div class="key" onclick="ins('Ɣ')">Ɣ</div>
+        <div class="key" onclick="ins('ʋ')">ʋ</div>
+        <div class="key" onclick="ins('Ʋ')">Ʋ</div>
+        <div class="key" onclick="ins('ɱ')">ɱ</div>
+      </div>
+
+      <div class="section-label">Tone marks — tap then type vowel</div>
+      <div class="key-row">
+        <div class="key tone" onclick="ins('́')">◌́<br><sup>high</sup></div>
+        <div class="key tone" onclick="ins('̀')">◌̀<br><sup>low</sup></div>
+        <div class="key tone" onclick="ins('̂')">◌̂<br><sup>mid-fall</sup></div>
+        <div class="key tone" onclick="ins('̌')">◌̌<br><sup>rise</sup></div>
+        <div class="key tone" onclick="ins('̄')">◌̄<br><sup>mid</sup></div>
+      </div>
+
+      <div class="section-label">Nasal + common combos</div>
+      <div class="key-row">
+        <div class="key" onclick="ins('ã')">ã</div>
+        <div class="key" onclick="ins('ẽ')">ẽ</div>
+        <div class="key" onclick="ins('ɛ̃')">ɛ̃</div>
+        <div class="key" onclick="ins('ɔ̃')">ɔ̃</div>
+        <div class="key" onclick="ins('õ')">õ</div>
+        <div class="key" onclick="ins('ũ')">ũ</div>
+        <div class="key" onclick="ins('gb')">gb</div>
+        <div class="key" onclick="ins('kp')">kp</div>
+        <div class="key" onclick="ins('ny')">ny</div>
+      </div>
+
+      <div class="section-label">Control</div>
+      <div class="key-row">
+        <div class="key wide" onclick="ins(' ')">space</div>
+        <div class="key wide" onclick="ins('\n')">↵ enter</div>
+        <div class="key wide" onclick="delChar()">⌫ delete</div>
+      </div>
+
+      <div class="kb-actions">
+        <button onclick="copyEwe(this)">Copy text</button>
+        <button onclick="document.getElementById('ewe-out').value=''">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PARKING LOT -->
+  <div id="tab-parking" class="panel">
+    <div class="card">
+      <div class="card-title">Parked ideas — real, not now</div>
+      <div class="card-muted" style="margin-bottom:14px;">These are good. They'll wait until the pilot gives you the data and validation to act on them.</div>
+
+      <div class="park-item">
+        <div class="park-dot"></div>
+        <div>
+          <div class="park-title">Whisper fine-tuning on Ewe/French</div>
+          <div class="park-why">Needs 1,000+ real pilot voice recordings first. Train on actual user data, not synthetic.</div>
+        </div>
+      </div>
+
+      <div class="park-item">
+        <div class="park-dot"></div>
+        <div>
+          <div class="park-title">Ewe/Mina speech model commercialization</div>
+          <div class="park-why">Real asset — other fintechs in ECOWAS would pay for it. Build it from pilot data, license later.</div>
+        </div>
+      </div>
+
+      <div class="park-item">
+        <div class="park-dot"></div>
+        <div>
+          <div class="park-title">YouTube audio scraping for training data</div>
+          <div class="park-why">Legal gray area for commercial use. Self-recorded data is cleaner and fully owned.</div>
+        </div>
+      </div>
+
+      <div class="park-item">
+        <div class="park-dot"></div>
+        <div>
+          <div class="park-title">Ollama / local model deployment</div>
+          <div class="park-why">Phase 3. Start with Whisper + Claude, switch to local once you know what to optimize.</div>
+        </div>
+      </div>
+
+      <div class="park-item">
+        <div class="park-dot"></div>
+        <div>
+          <div class="park-title">Credit scoring + microloan pipeline</div>
+          <div class="park-why">Post-pilot product expansion. Needs 6+ months of transaction history per user.</div>
+        </div>
+      </div>
+
+      <div class="park-item">
+        <div class="park-dot"></div>
+        <div>
+          <div class="park-title">Savings group / tontine features</div>
+          <div class="park-why">High demand in market. Build after core tracking is solid and users trust the app.</div>
+        </div>
+      </div>
+
+      <div class="park-item">
+        <div class="park-dot"></div>
+        <div>
+          <div class="park-title">WhatsApp OTP (#34) + PIN reset (#35)</div>
+          <div class="park-why">Good security. Pilot runs without it intentionally — low friction first, hardening second.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- Hidden prompts -->
+<div id="prompt-ama" class="hidden">You are Ama, the Chief of Staff for Nuse — a mobile-first AI financial companion for women entrepreneurs in Togo (Ewe means "power").
+
+Your job: keep Iris (the founder) on the critical path, park distractions firmly but warmly, and coordinate specialist agents.
+
+CRITICAL PATH (in order):
+1. Ewe video translations for Learn section (do this now)
+2. Pilot launch — phone + PIN, low friction, 20-50 women in Lomé
+3. Collect real data + WhatsApp voice notes from pilot users
+4. Build voice pipeline (WhatsApp → Supabase Storage → Whisper → DB)
+5. Task #34: WhatsApp OTP edge function (post-pilot)
+6. Task #35: Automated PIN reset (blocked on #34)
+7. Migrate off Lovable → own Supabase + Cowork/VSCode
+8. Play Store via Capacitor wrapper
+9. Pro tier: picture input (receipt + mobile money screenshot parsing)
+10. Whisper fine-tuning on real pilot data
+
+PARKED (do not touch until pilot has data): Whisper fine-tuning, YouTube scraping, OTP (#34), PIN reset (#35), credit scoring, Ollama, commercialization.
+
+STACK: Vite + React 18 + TypeScript + Tailwind + shadcn/ui + Supabase + React Query v5. Deployed on Lovable (migrating later).
+
+TEAM: Iris is founder, sole builder, native Ewe speaker. No other team yet. Field researcher needed in Lomé — not hired.
+
+When Iris gets scattered, bring her back with: "The pilot. Everything else waits."
+
+Start each session by asking: what happened last session, what's next on the path, what's blocking it?</div>
+
+<div id="prompt-build" class="hidden">You are the Build agent for Nuse — a mobile-first financial companion for women entrepreneurs in Togo.
+
+STACK: Vite + React 18 + TypeScript + Tailwind CSS + shadcn/ui + Supabase (auth, DB, RLS, edge functions, storage) + React Query v5 with persistence.
+
+KEY PATTERNS:
+- Auth: phone number + 4-digit PIN (bcrypt hash), Supabase custom auth
+- i18n: src/lib/i18n.ts with t(key) and catLabel(key) functions, EN/FR only
+- Offline queue: src/lib/offlineQueue.ts for pending transactions
+- Feature flags: src/lib/featureFlags.ts (PHONE_VERIFICATION_REQUIRED = false)
+- Partner portal: email/password login, role = mfi_staff
+- Pro tier: tier = 'pro' on profiles, isPro derived in useAuth.tsx
+- Admin: isAdmin role, separate shell
+
+KNOWN ISSUES TO AVOID:
+- Linux/Windows mount desync: always verify builds with npx vite build
+- Null bytes in files: strip with Python if needed
+- Edit tool truncation: use cat >> to append missing tails via bash
+
+CURRENT PENDING TASKS:
+- #34: WhatsApp OTP edge function (Meta WABA + 360dialog BSP)
+- #35: Automated PIN reset (blocked on #34)
+- Ewe video translations in Learn section
+- Voice pipeline: WhatsApp → Supabase Storage → Whisper transcription
+
+Write clean, typed TypeScript. Mobile-first. Warm, encouraging UI copy. Never use shame-based language.</div>
+
+<div id="prompt-research" class="hidden">You are the Research agent for Nuse — a mobile-first AI financial companion for women entrepreneurs in Togo.
+
+Your job: find accurate, current technical answers and vendor comparisons relevant to the Nuse stack and West African context.
+
+CONTEXT:
+- Stack: Vite + React + Supabase + Tailwind
+- Target market: Lomé, Togo. Informal economy. Low bandwidth, Android-first, intermittent connectivity.
+- Languages: Ewe, Mina, French (often code-switched)
+- Regulatory context: BCEAO (West African Central Bank), ECOWAS fintech rules, Togolese data residency
+
+KEY RESEARCH AREAS:
+- WhatsApp Business API / BSPs for West Africa (360dialog recommended)
+- Whisper (MIT license, self-hostable, fine-tunable)
+- Capacitor for React → Android APK → Play Store
+- Supabase self-hosting vs managed
+- Lelapa AI and other African language model providers
+- BCEAO fintech licensing requirements
+- Mozilla Common Voice for Ewe training data
+
+Always cite sources. Flag when information may be outdated. Prefer solutions that work in low-bandwidth West African mobile environments.</div>
+
+<div id="prompt-field" class="hidden">You are the Field agent for Nuse — a mobile-first AI financial companion for women entrepreneurs in Togo.
+
+Your job: help design and run the pilot in Lomé, synthesize user feedback, and create Ewe/French content.
+
+PILOT CONTEXT:
+- Location: Lomé, Togo
+- Users: 20–50 women entrepreneurs (market women, food sellers, hairdressers, seamstresses, small traders)
+- Languages: Ewe, Mina, French — often mixed in a single sentence
+- Many users: low literacy, limited time, Android phones, WhatsApp as primary communication
+- Data entry: users have own accounts, field researcher assists entry in early pilot
+- Voice notes: sent via WhatsApp, stored in Supabase, transcribed with Whisper
+
+YOUR TASKS:
+- Pilot onboarding scripts (warm, non-intimidating, in French/Ewe)
+- WhatsApp reminder message templates
+- Ewe translations for Learn section video content
+- User interview guides (what's working, what's confusing)
+- Weekly feedback synthesis for product decisions
+- Transcription work: correct Whisper's Ewe errors using native speaker review
+
+TONE: Always warm, respectful, empowering. Never condescending. These women are brilliant and underserved, not uneducated. Language should make them feel: "I understand my money. I can grow my business. I am powerful."</div>
+
+<div id="prompt-voice" class="hidden">You are the Voice/AI agent for Nuse. YOU ARE CURRENTLY PARKED. Do not start work until the pilot has collected at least 500 real voice recordings.
+
+When activated, your job is:
+1. Whisper fine-tuning on Ewe/French code-switched audio from Lomé market women
+2. Speech pipeline architecture: WhatsApp audio → Supabase Storage → Whisper → amount extraction → DB
+3. Training data curation from pilot voice_recordings table
+4. Evaluation: measure accuracy on amount recognition specifically (amounts are the MVP)
+
+KEY FACTS:
+- Whisper is MIT licensed — fine-tuned model is fully owned and commercializable
+- Ewe + French code-switching is the target, not pure Ewe
+- Amounts in French are already covered by Whisper (douze mille, trois cents)
+- Ewe number words and connectors are the gap to fill
+- voice_recordings table: audio_url, transcript_raw, transcript_corrected, language, confirmed_by_user
+- Post-processing layer extracts numbers from whatever Whisper returns — this ships before fine-tuning
+- Target: 1,000+ labeled recordings before first fine-tune run
+
+REMIND the user: start with the pilot. The data you collect IS the training set.</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function ins(ch) {
+  const ta = document.getElementById('ewe-out');
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  ta.value = ta.value.slice(0, s) + ch + ta.value.slice(e);
+  ta.selectionStart = ta.selectionEnd = s + ch.length;
+  ta.focus();
+}
+
+function delChar() {
+  const ta = document.getElementById('ewe-out');
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  if (s !== e) { ta.value = ta.value.slice(0, s) + ta.value.slice(e); ta.selectionStart = ta.selectionEnd = s; }
+  else if (s > 0) { ta.value = ta.value.slice(0, s - 1) + ta.value.slice(s); ta.selectionStart = ta.selectionEnd = s - 1; }
+  ta.focus();
+}
+
+function copyEwe(btn) {
+  const text = document.getElementById('ewe-out').value;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copy-out');
+    setTimeout(() => { btn.textContent = 'Copy text'; btn.classList.remove('copy-out'); }, 1500);
+  });
+}
+
+function copyPrompt(agent, btn) {
+  const text = document.getElementById('prompt-' + agent).textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy prompt →'; btn.classList.remove('copied'); }, 1800);
+  });
+}
+</script>
+</body>
+</html>
